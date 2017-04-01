@@ -1,0 +1,23 @@
+1. Test baseline cases (compare with Toro's book)
+2. Determine why time-step restriction is so low
+3. Implement and test characteristic BCs
+4. Implement and test wave cases (periodic)
+5. Implement and test nozzle cases
+6. Implement implicit schemes
+7. Dual time-stepping
+8. Low Mach number preconditioning
+9. Clustering AMR
+10. Block-based AMR
+11. EOSs (constant or look-up table based)
+12. Mixtures of gases
+13. Mixtures liquids and gases
+14. Fluid-particle flow
+15. Fluid-droplet flow
+16. Droplet break-up
+17. Reactions
+18. Ionization and dissociation
+19. Generalized shapes (area changes, force terms due to bends and actuators)
+20. Python based GUI and pyplot
+21. Workflow manager - OMFit
+22. Optimization manager
+23. Low-Knudsen number regimes

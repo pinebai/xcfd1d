@@ -1,0 +1,64 @@
+#-----------------------------------------------------------#
+#       Platform Compile Options                            # 
+#-----------------------------------------------------------#
+#
+PLATFORM = generic
+
+MODD = mods
+BIND = ../bin
+
+# Version GNU, GNUD, INTEL, INTELD
+COMPILER = GNU
+
+#-----------------------------------------------------------#
+#       Platform Specific Compiler Flags                    #
+#-----------------------------------------------------------#
+
+# Determine the platform that is being used for this compilation
+PLATFORM:= $(shell uname)_$(shell uname -m)
+
+# Set Linux x86_64 specific compilation flags
+ifeq ($(PLATFORM),Linux_x86_64)
+  # GNU Compiler
+  ifeq ($(COMPILER),GNU)
+    FC = gfortran
+    FFLAGS = -ffree-form -O2 -fdefault-real-8 -J${MODD}
+    LD = $(FC)
+    LDFLAGS = -ffree-form -O2 -fdefault-real-8 -J${MODD}
+  endif
+  ifeq ($(COMPILER),GNUD)
+    FC = gfortran
+    FFLAGS = -ffree-form -g -fdefault-real-8 -J${MODD}
+    LD = $(FC)
+    LDFLAGS = -ffree-form -g -fdefault-real-8 -J${MODD}
+  endif
+
+  # INTEL Compiler
+  ifeq ($(COMPILER),INTEL)
+    FC = ifort
+    FFLAGS = -O2 -r8 -module ${MODD}
+    LD = $(FC)
+    LDFLAGS = -O2 -r8 -module ${MODD}
+  endif
+  ifeq ($(COMPILER),INTELD)
+    FC = ifort
+    FFLAGS = -g -r8 -module ${MODD}
+    LD = $(FC)
+    LDFLAGS = -g -r8 -module ${MODD}
+  endif
+
+  # Portland Group Compiler
+  ifeq ($(COMPILER),PGI)
+    FC = pgf90
+    FFLAGS = -O2 -Mr8 -module ${MODD}
+    LD = $(FC)
+    LDFLAGS = -O2 -Mr8 -module ${MODD}
+  endif
+  ifeq ($(COMPILER),PGID)
+    FC = pgf90
+    FFLAGS = -g -Mr8 -module ${MODD}
+    LD = $(FC)
+    LDFLAGS = -g -Mr8 -module ${MODD}
+  endif
+
+endif

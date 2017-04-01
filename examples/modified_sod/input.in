@@ -1,0 +1,94 @@
+#----------------------------------------+
+#  MODIFIED SOD'S PROBLEM                |
+#                                        |
+# (x,t) = (0.30,0.20), (0 <= x <= 1.0)   |
+#                                        |
+# Wl = Euler1D_pState(1.000,0.75,1.00)   |
+# Wr = Euler1D_pState(0.125,0.00,0.10)   |
+#                                        |
+#----------------------------------------+
+
+# DOMAIN PARAMETERS:
+&domain
+ num_cells = 100
+ num_ghost = 2,
+ Xl = 0.0,
+ Xr = 1.0,
+ BCleft = 2,
+ BCright = 2,
+/
+
+# INITIAL CONDIITIONS:
+&initial
+ init_type = 2,
+/
+
+# TEMPORAL DISCRETIZATION:
+&temporal
+ i_explicit = 2
+ n_stage = 4
+ cfl_number = 0.25
+ time_max = 0.0008
+ max_time_steps = 10000
+ i_output_freq = 10
+/
+
+# SPATIAL DISCRETIZATION:
+&spatial
+ i_flux_function = 7
+ i_limiter = 10
+ i_reconstruction = 1
+/
+# Godunov = 0
+# Isentropic = 1
+# Rusanov = 2
+# HLLE = 3
+# HLLL = 4
+# HLLC = 5
+# Osher-P = 6
+# Roe = 7
+# van Leer = 8
+# AUSM+ = 9
+
+# zero = 0
+# one = 1
+# van Leer = 7
+# van Albada = 8
+# Barth-Jespersen = 10
+# Venkatakrishnan = 11
+
+
+# OUTPUT FORMATS:
+&output
+ plot_tecplot = false
+ plot_gnuplot = true
+ plot_eps     = false
+/
+
+# Density = 1
+# Speed = 2
+# Pressure = 3
+# Temperature = 4
+# Internal Energy = 5
+# Mach Number = 6
+
+# EPS PLOTS:
+&eps_plots
+ nplots = 6
+ Xf = 640, 640, 640, 640, 640, 640
+ Yf = 400, 400, 400, 400, 400, 400
+ Xo =  56,  56,  56,  75,  56,  60
+ Yo =  35,  35,  35,  35,  35,  35
+ Xa =  38,  38,  38,  50,  38,  38
+ Ya =  14,  14,  14,  14,  14,  14
+ xvar = 1, 1, 1, 1, 1, 1
+ yvar = 1, 2, 3, 4, 5, 6
+ xmin = 0.00, 0.00, 0.00, 0.0000, 0.00, 0.00
+ ymin = 0.00, 0.00, 0.00, 0.0020, 1.80, 0.00
+ xmax = 1.00, 1.00, 1.00, 1.0000, 1.00, 1.00
+ ymax = 1.05, 1.60, 1.05, 0.0050, 3.80, 1.50
+ dx   = 0.20, 0.20, 0.20, 0.2000, 0.20, 0.20
+ dy   = 0.20, 0.40, 0.20, 0.0006, 0.50, 0.50
+ xsig = 1, 1, 1, 1, 1, 1
+ ysig = 1, 1, 1, 4, 1, 1
+/
