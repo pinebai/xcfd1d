@@ -12,9 +12,9 @@ $(shell [ -d ${MODD} ] || mkdir -p ${MODD})
 # List of objects
 OBJS =	mathFuncs.o \
 	cfdParams.o \
+	gasConstants.o \
 	stateVector.o \
 	inputParams.o \
-	gasConstants.o \
 	gridBlock.o \
 	fluxVector.o \
 	exactSolns.o \
