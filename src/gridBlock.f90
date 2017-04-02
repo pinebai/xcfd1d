@@ -36,6 +36,8 @@ module gridBlock_module
   type(cellGeom), allocatable, dimension(:) :: Cell !Array of cell-centre locations
   type(gridData)                            :: Grid
 
+  integer :: i_grid
+  
 contains
 
   !---------------------------------------------------------------------
@@ -77,26 +79,30 @@ contains
   !---------------------------------------------------------------------
   ! Allocate grid node and cell arrays.
   !---------------------------------------------------------------------
-  subroutine gridBlock_allocate(status,num_cells,num_ghost)
-    use cfdParams, only: BC_NONE, STR_LINEAR
+  subroutine gridBlock_allocate(status,i_problem,num_cells,num_ghost)
+    use cfdParams
     implicit none
     integer, intent(out) :: status    !Allocation status flag
+    integer, intent(in)  :: i_problem !Problem specification
     integer, intent(in)  :: num_cells !Number of cells
     integer, intent(in)  :: num_ghost !Number of ghost cells
     integer :: n
+    i_grid = GRID_SHOCK_TUBE
+    if((i_problem.eq.SUBSONIC_NOZZLE).or.(i_problem.eq.TRANSONIC_NOZZLE)) i_grid = GRID_NOZZLE
+    if((i_problem.ge.SQUARE_WAVE).and.(i_problem.le.SEMI_ELLIPSE_WAVE)) i_grid = GRID_WAVE_PROBLEM
     Grid%Ng  = num_ghost
     Grid%NC  = num_cells + 2*Grid%Ng
     Grid%NN  = Grid%NC + 1
-    Grid%NNl = Grid%Ng+1
-    Grid%NNu = Grid%NN-Grid%Ng
-    Grid%NCl = Grid%Ng+1
-    Grid%NCu = Grid%NC-Grid%Ng
+    Grid%NNl = Grid%Ng + 1
+    Grid%NNu = Grid%NN - Grid%Ng
+    Grid%NCl = Grid%Ng + 1
+    Grid%NCu = Grid%NC - Grid%Ng
     allocate(Node(Grid%NN),STAT=status)
     if(status.ne.0) return
     allocate(Cell(Grid%NC),STAT=status)
     if(status.ne.0) return
     do n = 1, Grid%NN
-      Node(n)%x = 0.
+      Node(n)%x = 0.0_dp
     end do
     do n = 1, Grid%NC
       Cell(n)%xc = 0.0_dp
@@ -104,13 +110,11 @@ contains
       Cell(n)%xa = 1.0_dp
       Cell(n)%da = 0.0_dp
     end do
-    call createBlock(0.0_dp,1.0_dp,BC_NONE,BC_NONE,STR_LINEAR,1.0_dp,1.0_dp)
     return
   end subroutine gridBlock_allocate
 
-
   !---------------------------------------------------------------------
-  ! Allocate grid node and cell arrays.
+  ! Allocate grid node and cell arrays
   !---------------------------------------------------------------------
   subroutine gridBlock_deallocate
     implicit none
@@ -119,9 +123,8 @@ contains
     return
   end subroutine gridBlock_deallocate
 
-
   !---------------------------------------------------------------------
-  ! Return the cell centroid.
+  ! Return the cell centroid
   !---------------------------------------------------------------------
   real(dp) function centroid(nc)
     implicit none
@@ -130,9 +133,8 @@ contains
     return
   end function centroid
 
-
   !---------------------------------------------------------------------
-  ! Return the cell length.
+  ! Return the cell length
   !---------------------------------------------------------------------
   real(dp) function length(nc)
     implicit none
@@ -141,9 +143,8 @@ contains
     return
   end function length
 
-
   !---------------------------------------------------------------------
-  ! Return the position of the left face of the cell.
+  ! Return the position of the left face of the cell
   !---------------------------------------------------------------------
   real(dp) function xfaceL(nc)
     implicit none
@@ -152,9 +153,8 @@ contains
     return
   end function xfaceL
 
-
   !---------------------------------------------------------------------
-  ! Return the position of the right face of the cell.
+  ! Return the position of the right face of the cell
   !---------------------------------------------------------------------
   real(dp) function xfaceR(nc)
     implicit none
@@ -163,9 +163,8 @@ contains
     return
   end function xfaceR
 
-
   !---------------------------------------------------------------------
-  ! Update the exterior nodes of the grid block.
+  ! Update the exterior nodes of the grid block
   !---------------------------------------------------------------------
   subroutine updateNodes(BCl,BCr)
     use cfdParams
@@ -206,9 +205,8 @@ contains
     return
   end subroutine updateNodes
 
-
   !---------------------------------------------------------------------
-  ! Update the cells of the grid block.
+  ! Update the cells of the grid block
   !---------------------------------------------------------------------
   subroutine updateCells
     implicit none
@@ -220,21 +218,35 @@ contains
     return
   end subroutine updateCells
 
-
   !---------------------------------------------------------------------
-  ! Create the grid block.
+  ! Create the grid block
   !---------------------------------------------------------------------
-  subroutine createBlock(xl, xr, bcl, bcr, str_fcn, beta, tau)
+  subroutine createBlock
+    use cfdParams
     implicit none
-    real(dp), intent(in) :: xl
-    real(dp), intent(in) :: xr
-    integer,  intent(in) :: bcl
-    integer,  intent(in) :: bcr
-    integer,  intent(in) :: str_fcn
-    real(dp), intent(in) :: beta
-    real(dp), intent(in) :: tau
-    integer              :: nn
-    real(dp)             :: x
+    integer  :: nn
+    real(dp) :: x, xl, xr
+    integer  :: bcl, bcr
+    integer  :: str_fcn
+    real(dp) :: beta, tau
+    !Set parameters for problem:
+    select case(i_grid)
+    case(GRID_SHOCK_TUBE)
+      xl = 0.0_dp ; bcl = BC_REFLECTION
+      xr = 1.0_dp ; bcr = BC_REFLECTION
+      beta = 1.0_dp ; tau = 1.0_dp
+      str_fcn = STR_LINEAR
+    case(GRID_NOZZLE)
+      xl =  0.0_dp ; bcl = BC_FIXED
+      xr = 10.0_dp ; bcr = BC_CONSTANT_EXTRAPOLATION
+      beta = 1.0_dp ; tau = 1.0_dp
+      str_fcn = STR_MIDPT
+    case(GRID_WAVE_PROBLEM)
+      xl = -0.5_dp ; bcl = BC_PERIODIC
+      xr =  0.5_dp ; bcr = BC_PERIODIC
+      beta = 1.0_dp ; tau = 1.0_dp
+      str_fcn = STR_LINEAR
+    end select
     !Create the internal nodes of the block:
     do nn = Grid%NNl, Grid%NNu
       x = real(nn-Grid%NNl)/real(Grid%NNu-Grid%NNl)
@@ -249,17 +261,15 @@ contains
     return
   end subroutine createBlock
 
-
   !---------------------------------------------------------------------
-  ! Set the cross sectional area.
+  ! Set the cross sectional area
   !---------------------------------------------------------------------
   subroutine set_xarea
-    use inputParams, only: i_grid
-    use cfdParams, only: GRID_SHOCK_TUBE, GRID_NOZZLE
+    use cfdParams
     implicit none
     integer :: nc
     select case(i_grid)
-    case(GRID_SHOCK_TUBE)
+    case(GRID_SHOCK_TUBE,GRID_WAVE_PROBLEM)
       do nc = 1, Grid%NC
         Cell(nc)%xA = 1.0_dp
         Cell(nc)%dA = 0.0_dp
@@ -275,9 +285,6 @@ contains
         end if
       end do
     end select
-    do nc = 1, Grid%NC
-      write(6,*) Cell(nc)%Xc, Cell(:)%xA, Cell(:)%dA
-    end do
     return
   end subroutine set_xarea
 

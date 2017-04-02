@@ -8,19 +8,12 @@
 #                                        |
 #----------------------------------------+
 
-# DOMAIN PARAMETERS:
-&domain
- num_cells = 200,
+# PROBLEM PARAMETERS:
+&problem
+ i_problem = 3,
+ num_cells = 100,
  num_ghost = 2,
- Xl = 0.0,
- Xr = 1.0,
- BCleft = 2,
- BCright = 2,
-/
-
-# INITIAL CONDIITIONS:
-&initial
- init_type = 3,
+ i_gas_type = 0,
 /
 
 # TEMPORAL DISCRETIZATION:
@@ -35,9 +28,9 @@
 
 # SPATIAL DISCRETIZATION:
 &spatial
- i_flux_function = 4
+ i_flux = 4
  i_limiter = 10
- i_reconstruction = 1
+ i_recon = 1
 /
 # Godunov = 0
 # Isentropic = 1
@@ -56,12 +49,12 @@
 # Barth-Jespersen = 10
 # Venkatakrishnan = 11
 
-
 # OUTPUT FORMATS:
 &output
- plot_tecplot = false
- plot_gnuplot = true
- plot_eps = false
+ plot_tecplot = false,
+ plot_gnuplot = true,
+ plot_eps = false,
+ plot_python = false,
 /
 
 # Density = 1

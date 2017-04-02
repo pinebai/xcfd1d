@@ -2,34 +2,20 @@
 ! Module for reading input parameters
 !-----------------------------------------------------------------------
 module inputParams
-  !Include real sizes module
   use realSizes, only: dp
-  !Include the (rho,u,p)-primitive-variable solution state
   use Euler1D_WState
-
-  !Implicit declaration
+  
   implicit none
 
-  !Domain related input parameters:
+  !Problem related input parameters:
+  integer                 :: i_problem           !Problem specification
   integer                 :: num_cells           !Number of cells in the domain
   integer                 :: num_ghost           !Number of ghost cells
-  integer                 :: i_grid              !Grid type
-  real(dp)                :: xl, xr              !Left and right domain locations
-  integer                 :: BCleft, BCright     !Left and right boundary conditions
-  integer                 :: Str_fcn             !Stretching function
-  real(dp)                :: beta_str, tau_str   !Stretching parameters
-  namelist / domain / num_cells, num_ghost, i_grid, xl, xr, BCleft, BCright, &
-       Str_fcn, beta_str, tau_str
-
-  !Gas-type input parameters:
   integer                 :: i_gas_type          !Gas type
-  namelist / gas / i_gas_type
-
-  !Initial condition input parameters:
-  integer                 :: init_type           !Initial condition type
-  real(dp)                :: yl, ym, yr          !Wave-locations
-  type(Euler1D_W_State)   :: Wl, Wm, Wr          !Left, middle, and right initial states
-  namelist / initial / init_type, yl, ym, yr, Wl, Wm, Wr
+  real(dp)                :: rhom, um, pm        !Reference state for wave problems
+  real(dp)                :: wm                  !Wave width
+  namelist / problem / i_problem, num_cells, num_ghost, i_gas_type, &
+       rhom, um, pm, wm
 
   !Temporal discretization parameters:
   integer                 :: i_explicit          !Time integration type
@@ -50,18 +36,20 @@ module inputParams
   namelist / spatial / i_flux, i_limiter, i_recon, betam
 
   !Output formats:
-  logical                 :: plot_tecplot        !Write output into Tecplot format
-  logical                 :: plot_gnuplot        !Write output into gnuplot format
+  character(len=64)       :: plot_name           !Name of output file
+  logical                 :: plot_tecplot        !Write output to Tecplot format
+  logical                 :: plot_gnuplot        !Write output to gnuplot format
+  logical                 :: plot_python         !Write output to format ready for python (matplotlib)
   logical                 :: plot_eps            !Make encapsulated post-script plots
-  namelist / output / plot_tecplot, plot_gnuplot, plot_eps
+  namelist / output / plot_name, plot_tecplot, plot_gnuplot, plot_python, plot_eps
 
   !EPS Figures:
   integer,  parameter     :: max_plots = 20
   integer                 :: nplots
-  real(dp), dimension(20) :: Xf, Yf, Xo, Yo, Xa, Ya
+  real(dp), dimension(20) :: xf, yf, xo, yo, xa, ya
   real(dp), dimension(20) :: xmin, xmax, dx, xdim, ymin, ymax, dy, ydim
   integer,  dimension(20) :: xvar, yvar, xsig, ysig
-  namelist / eps_plots / nplots, Xf, Yf, Xo, Yo, Xa, Ya, &
+  namelist / eps_plots / nplots, xf, yf, xo, yo, xa, ya, &
        xvar, xmin, xmax, dx, yvar, ymin, ymax, dy, xdim, ydim, xsig, ysig
 
 contains
@@ -70,29 +58,18 @@ contains
   !---------------------------------------------------------------------
   subroutine inputDefaults
     use cfdParams
-    use gasConstants, only: GAS_AIR, setGas
+    use gasConstants, only: GAS_AIR, g, xmw, setGas
     implicit none
-    !Domain related input parameters:
-    num_cells = 10
+    !Problem related input parameters:
+    i_problem = SOD_PROBLEM
+    num_cells = 20
     num_ghost = 2
-    BCleft = BC_REFLECTION
-    BCright = BC_REFLECTION
-    Xl = 0.0_dp
-    Xr = 1.0_dp
-    Str_fcn = STR_LINEAR
-    beta_str = 1.0_dp
-    tau_str = 1.0_dp
-    !Gas-type:
     i_gas_type = GAS_AIR
     call setGas(i_gas_type)
-    call standard_atmosphere_W(Wl)
-    call standard_atmosphere_W(Wm)
-    call standard_atmosphere_W(Wr)
-    !Initial conditions:
-    init_type = IC_UNIFORM
-    yl = Xl
-    yr = Xr
-    ym = 0.5_dp*(yr-yl)
+    rhom = 1.225_dp
+    um = 10.0_dp
+    pm = 101325.0_dp
+    wm = 0.1_dp
     !Time-integration parameters:
     i_explicit = EXPLICIT_EULER
     n_stage = 1
@@ -107,9 +84,11 @@ contains
     i_recon = RECONSTRUCTION_LSQ
     betam = 0.5_dp
     !Output formats:
+    plot_name    = 'output'
     plot_tecplot = .false.
     plot_gnuplot = .false.
     plot_eps     = .false.
+    plot_python  = .false.
     !EPS Figures:
     nplots = 0
     Xf(:) = 0.0_dp; Yf(:) = 0.0_dp
@@ -126,13 +105,12 @@ contains
   !---------------------------------------------------------------------
   !---------------------------------------------------------------------
   subroutine inputNamelists
+    use gasConstants, only: setGas
     implicit none
-    !Open the input file.
+    !Open the input file
     open(unit=7,file='input.in')
-    !Read in the grid namelist:
-    read(unit=7,nml=domain)
-    !Read in the initial conditions namelist:
-    read(unit=7,nml=initial)
+    !Read in the problem namelist:
+    read(unit=7,nml=problem)
     !Read in the temporal discretization namelist:
     read(unit=7,nml=temporal)
     !Read in the spatial discretization namelist:
@@ -141,7 +119,9 @@ contains
     read(unit=7,nml=output)
     !Read in the EPS plots namelist:
     read(unit=7,nml=eps_plots)
-    !Close the input file.
+    !Set the gas types:
+    call setGas(i_gas_type)
+    !Close the input file
     close(7)
     return
   end subroutine inputNamelists
@@ -152,58 +132,23 @@ contains
   subroutine inputConsistency(ierr)
     use Numbers, only: TOLER
     use cfdParams
-    use gasConstants, only: GAS_AIR
+    use gasConstants, only: GAS_AIR, GAS_O2, g, xmw, setGas
     implicit none
     integer, intent(out) :: ierr
     ierr = 0
 
-    if(init_type.lt.IC_UNIFORM) then
+    if(i_problem.lt.SOD_PROBLEM.or.i_problem.gt.SEMI_ELLIPSE_WAVE) then
       write(6,"(a)") "    - Initial condition type specified incorrectly."
       ierr = ierr + 1
     end if
 
-    if((i_gas_type.lt.GAS_AIR).or.(i_gas_type.gt.GAS_AIR)) then
-      write(6,"(a)") "    ~- Gas type specified incorrectly."
-      ierr = ierr + 1
-    end if
-
     if(num_cells.lt.5) then
-      write(6,"(a)") "    - To few cells have been requested."
+      write(6,"(a)") "    - Too few cells have been requested."
       ierr = ierr + 1
     end if
 
     if(num_ghost.lt.2.or.num_ghost.gt.3) then
       write(6,"(a)") "    - An incorrect number of ghost cells have been specified."
-      ierr = ierr + 1
-    end if
-
-    if((BCleft.lt.BC_FIXED).or.(BCleft.gt.BC_PERIODIC)) then
-      write(6,"(a)") "    - An invalid left boundary condition has been specified."
-      ierr = ierr + 1
-    end if
-
-    if((BCright.lt.BC_FIXED).or.(BCright.gt.BC_PERIODIC)) then
-      write(6,"(a)") "    - An invalid right boundary condition has been specified."
-      ierr = ierr + 1
-    end if
-
-    if((i_grid.lt.GRID_SHOCK_TUBE).or.(i_grid.gt.GRID_NOZZLE)) then
-      write(6,"(a)") "    - Grid type specified incorrectly."
-      ierr = ierr + 1
-    end if
-
-    if((Str_fcn.lt.STR_LINEAR).or.(Str_fcn.gt.STR_COSINE)) then
-      write(6,"(a)") "    - An invalid stretching function has been specified."
-      ierr = ierr + 1
-    end if
-
-    if((Str_fcn.ne.STR_LINEAR).and.(beta_str.le.1.)) then
-      write(6,"(a)") "    - An invalid stretching beta-parameter has been specified."
-      ierr = ierr + 1
-    end if
-
-    if((Str_fcn.ne.STR_LINEAR).and.(tau_str.le.1.)) then
-      write(6,"(a)") "    - An invalid stretching tau-parameter has been specified."
       ierr = ierr + 1
     end if
 
@@ -263,30 +208,28 @@ contains
   subroutine inputWrite
     use cfdParams
     implicit none
-    if(init_type.eq.IC_UNIFORM) then
-      write(6,"(a)") "    - Uniform"
-    else if(init_type.eq.IC_SOD) then
+    if(i_problem.eq.SOD_PROBLEM) then
       write(6,"(a)") "    - Sod problem"
-    else if(init_type.eq.IC_MODIFIED_SOD) then
+    else if(i_problem.eq.MODIFIED_SOD) then
       write(6,"(a)") "    - Modified Sod problem"
-    else if(init_type.eq.IC_STRONG_SOD) then
+    else if(i_problem.eq.STRONG_SOD) then
       write(6,"(a)") "    - Strong Sod"
-    else if(init_type.eq.IC_123_PROBLEM) then
+    else if(i_problem.eq.PROBLEM_123) then
       write(6,"(a)") "    - 123 problem"
-    else if(init_type.eq.IC_THREE_RIGHT_WAVES) then
+    else if(i_problem.eq.THREE_RIGHT_WAVES) then
       write(6,"(a)") "    - Three right travelling waves"
-    else if(init_type.eq.IC_STATIONARY_CONTACT) then
+    else if(i_problem.eq.STATIONARY_CONTACT) then
       write(6,"(a)") "    - Stationary contact surface"
-    else if(init_type.eq.IC_SUBSONIC_NOZZLE) then
+    else if(i_problem.eq.SUBSONIC_NOZZLE) then
       write(6,"(a)") "    - Subsonic nozzle flow"
-    else if(init_type.eq.IC_TRANSONIC_NOZZLE) then
+    else if(i_problem.eq.TRANSONIC_NOZZLE) then
       write(6,"(a)") "    - Transonic nozzle flow"
-    else if(init_type.eq.IC_SQUARE_WAVE) then
-      write(6,"(a)") "    - Square Wave"
-    else if(init_type.eq.IC_SINE_SQUARED_WAVE) then
-      write(6,"(a)") "    - Sine-Squared Wave"
-    else if(init_type.eq.IC_SEMI_ELLIPSE_WAVE) then
-      write(6,"(a)") "    - Semi-Ellipse Wave"
+    else if(i_problem.eq.SQUARE_WAVE) then
+      write(6,"(a)") "    - Square density wave"
+    else if(i_problem.eq.SINE_SQUARED_WAVE) then
+      write(6,"(a)") "    - Sine squared density wave"
+    else if(i_problem.eq.SEMI_ELLIPSE_WAVE) then
+      write(6,"(a)") "    - Semi ellipse density wave"
     end if
     if(i_explicit.eq.EXPLICIT_EULER) then
       write(6,"(a)") "    - Explicit Euler"

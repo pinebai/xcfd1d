@@ -8,22 +8,22 @@ module cfdParams
   implicit none
 
   !Define initial conditions:
-  integer, parameter :: IC_UNIFORM = 0
-  integer, parameter :: IC_SOD = 1
-  integer, parameter :: IC_MODIFIED_SOD = 2
-  integer, parameter :: IC_STRONG_SOD = 3
-  integer, parameter :: IC_123_PROBLEM = 4
-  integer, parameter :: IC_THREE_RIGHT_WAVES = 5
-  integer, parameter :: IC_STATIONARY_CONTACT = 6
-  integer, parameter :: IC_SUBSONIC_NOZZLE = 7
-  integer, parameter :: IC_TRANSONIC_NOZZLE = 8
-  integer, parameter :: IC_SQUARE_WAVE = 9
-  integer, parameter :: IC_SINE_SQUARED_WAVE = 10
-  integer, parameter :: IC_SEMI_ELLIPSE_WAVE = 11
+  integer, parameter :: SOD_PROBLEM = 1
+  integer, parameter :: MODIFIED_SOD = 2
+  integer, parameter :: STRONG_SOD = 3
+  integer, parameter :: PROBLEM_123 = 4
+  integer, parameter :: THREE_RIGHT_WAVES = 5
+  integer, parameter :: STATIONARY_CONTACT = 6
+  integer, parameter :: SUBSONIC_NOZZLE = 7
+  integer, parameter :: TRANSONIC_NOZZLE = 8
+  integer, parameter :: SQUARE_WAVE = 9
+  integer, parameter :: SINE_SQUARED_WAVE = 10
+  integer, parameter :: SEMI_ELLIPSE_WAVE = 11
 
   !Define grid types:
   integer, parameter :: GRID_SHOCK_TUBE = 0
   integer, parameter :: GRID_NOZZLE = 1
+  integer, parameter :: GRID_WAVE_PROBLEM = 2
 
   !Define grid stretching function types:
   integer, parameter :: STR_LINEAR = 0

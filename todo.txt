@@ -3,21 +3,19 @@
 3. Implement and test characteristic BCs
 4. Implement and test wave cases (periodic)
 5. Implement and test nozzle cases
-6. Implement implicit schemes
-7. Dual time-stepping
-8. Low Mach number preconditioning
-9. Clustering AMR
-10. Block-based AMR
-11. EOSs (constant or look-up table based)
-12. Mixtures of gases
-13. Mixtures liquids and gases
-14. Fluid-particle flow
-15. Fluid-droplet flow
-16. Droplet break-up
-17. Reactions
-18. Ionization and dissociation
-19. Generalized shapes (area changes, force terms due to bends and actuators)
-20. Python based GUI and pyplot
-21. Workflow manager - OMFit
-22. Optimization manager
-23. Low-Knudsen number regimes
+6. Multigrid
+7. Implement implicit schemes
+8. Dual time-stepping
+9. Low Mach number preconditioning
+10. Clustering AMR
+11. Block-based AMR
+12. EOSs (constant or look-up table based)
+13. Mixtures of gases
+14. Mixtures liquids and gases
+15. Fluid-particle flow
+16. Fluid-droplet flow
+17. Droplet break-up
+18. Reactions
+19. Ionization and dissociation
+20. Generalized shapes (area changes, force terms due to bends and actuators)
+21. Low-Knudsen number regimes

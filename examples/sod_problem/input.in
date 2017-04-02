@@ -8,19 +8,12 @@
 #                                        |
 #----------------------------------------+
 
-# DOMAIN PARAMETERS:
-&domain
- num_cells = 100
- num_ghost = 2
- Xl = 0.0
- Xr = 1.0
- BCleft = 2
- BCright = 2
-/
-
-# INITIAL CONDIITIONS:
-&initial
- init_type = 1
+# PROBLEM PARAMETERS:
+&problem
+ i_problem = 1,
+ num_cells = 100,
+ num_ghost = 2,
+ i_gas_type = 0,
 /
 
 # TEMPORAL DISCRETIZATION:
@@ -64,6 +57,7 @@
  plot_tecplot = false, 
  plot_gnuplot = true,
  plot_eps     = false,
+ plot_python  = false,
 /
 
 # EPS PLOTS:

@@ -1,44 +1,36 @@
 #---------------------------------------------------+
-#  LEFT _RAREFACTION STATIONARY CONTACT RIGHT SHOCK |
+# STATIONARY CONTACT                                |
 #                                                   |
-# (x,t) = (0.40,0.035), (0 <= x <= 1.0)             |
+# (x,t) = (0.80,0.012), (0 <= x <= 1.0)             |
 #                                                   |
 # Wl = Euler1D_pState(1.0,-19.59745,1000.00)        |
 # Wr = Euler1D_pState(1.0,-19.59745,   0.01)        |
 #                                                   |
 #---------------------------------------------------+
 
-# DOMAIN PARAMETERS:
-&domain
+# PROBLEM PARAMETERS:
+&problem
+ i_problem = 6,
  num_cells = 100,
  num_ghost = 2,
- Xl = 0.0,
- Xr = 1.0,
- BCleft = 2,
- BCright = 2,
-/
-
-# INITIAL CONDIITIONS:
-&initial
- init_type = 6,
+ i_gas_type = 0,
 /
 
 # TEMPORAL DISCRETIZATION:
 &temporal
- i_explicit = 2
- n_stage = 4
- cfl_number = 0.25
- time_max = 0.012
- time_max = 0.005
- max_time_steps = 10000
- i_output_freq = 10
+ i_explicit = 2,
+ n_stage = 4,
+ cfl_number = 0.25,
+ time_max = 0.012,
+ max_time_steps = 10000,
+ i_output_freq = 10,
 /
 
 # SPATIAL DISCRETIZATION:
 &spatial
- i_flux    = 7
- i_limiter = 10
- i_recon   = 1
+ i_flux    = 7,
+ i_limiter = 10,
+ i_recon   = 1,
 /
 # Godunov = 0
 # Isentropic = 1
@@ -60,9 +52,10 @@
 
 # OUTPUT FORMATS:
 &output
- plot_tecplot = false
- plot_gnuplot = true
- plot_eps = false
+ plot_tecplot = false,
+ plot_gnuplot = true,
+ plot_eps = false,
+ plot_python = false,
 /
 
 # Density = 1

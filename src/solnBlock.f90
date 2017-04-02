@@ -2,12 +2,9 @@
 ! Module for a one-dimensional solution block.
 !-----------------------------------------------------------------------
 module solnBlock_module
-  !Include the conserved-variable solution state.
-  use Euler1D_UState
-  !Include the (rho,u,p)-primitive-variable solution state.
-  use Euler1D_WState
+  use Euler1D_UState  !Conserved-variable solution state
+  use Euler1D_WState  !Primitive-variable solution state (rho,u,p)
 
-  !Implicit declaration.
   implicit none
 
   !Solution block variable declaration.
@@ -30,22 +27,21 @@ contains
 
   !---------------------------------------------------------------------
   !---------------------------------------------------------------------
-  subroutine solnBlock_allocate(status,num_cells,num_ghost,bcleft,bcright)
+  subroutine solnBlock_allocate(status,num_cells,num_ghost)
+    use cfdParams, only: BC_CONSTANT_EXTRAPOLATION
     implicit none
-    integer, intent(out) :: status    !Allocation status flag.
-    integer, intent(in)  :: num_cells !Number of cells.
-    integer, intent(in)  :: num_ghost !Number of ghost cells.
-    integer, intent(in)  :: bcleft    !Left boundary condition.
-    integer, intent(in)  :: bcright   !Right boundary condition.
+    integer, intent(out) :: status    !Allocation status flag
+    integer, intent(in)  :: num_cells !Number of cells
+    integer, intent(in)  :: num_ghost !Number of ghost cells
     integer              :: n
     !Set the cell counters:
     Ng  = num_ghost
     NC  = num_cells + 2*Ng
-    NCl = Ng+1
-    NCu = Nc-Ng
+    NCl = Ng + 1
+    NCu = Nc - Ng
     !Set the boundary conditions:
-    BCl = bcleft
-    BCr = bcright
+    BCl = BC_CONSTANT_EXTRAPOLATION
+    BCr = BC_CONSTANT_EXTRAPOLATION
     !Allocate memory for the array of conserved variables:
     allocate(U(NC),STAT=status)
     if(status.ne.0) return
@@ -73,7 +69,6 @@ contains
     end do
   end subroutine solnBlock_allocate
 
-
   !---------------------------------------------------------------------
   !---------------------------------------------------------------------
   subroutine solnBlock_deallocate
@@ -86,26 +81,20 @@ contains
     if(allocated(Qr)) deallocate(Qr)
   end subroutine solnBlock_deallocate
 
-
   !---------------------------------------------------------------------
   !---------------------------------------------------------------------
-  subroutine applyICs(init_type)
+  subroutine applyICs
     use realSizes, only: dp
     use numbers, only: PI
     use cfdParams
-    use inputParams, only: time_max
+    use inputParams, only: i_problem, time_max, rhom, um, pm, wm
     use gridBlock_module
     use exactSoln_module
     implicit none
-    integer, intent(in)   :: init_type
     integer               :: n
     type(Euler1D_W_State) :: Wl, Wr
-    select case(init_type)
-    case(IC_UNIFORM)
-      do n = NCl, NCu
-        call standard_atmosphere_W(W(n))
-      end do
-    case(IC_SOD)
+    select case(i_problem)
+    case(SOD_PROBLEM)
       Wl = WState(1.0_dp,0.0_dp,1.0_dp)
       Wr = WState(0.125_dp,0.0_dp,0.1_dp)
       do n = NCl-Ng, NCu+Ng
@@ -116,7 +105,7 @@ contains
         end if
       end do
       call exactSod(time_max)
-    case(IC_MODIFIED_SOD)
+    case(MODIFIED_SOD)
       Wl = WState(1.0_dp,0.75_dp,1.0_dp)
       Wr = WState(0.125_dp,0.0_dp,0.1_dp)
       do n = NCl-Ng, NCu+Ng
@@ -127,7 +116,7 @@ contains
         end if
       end do
       call exactModifiedSod(time_max)
-    case(IC_STRONG_SOD)
+    case(STRONG_SOD)
       Wl = WState(1.0_dp,0.0_dp,1000.0_dp)
       Wr = WState(0.125_dp,0.0_dp,0.01_dp)
       do n = NCl-Ng, NCu+Ng
@@ -138,7 +127,7 @@ contains
         end if
       end do
       call exactStrongSod(time_max)
-    case(IC_123_PROBLEM)
+    case(PROBLEM_123)
       Wl = WState(1.0_dp,-2.0_dp,0.4_dp)
       Wr = WState(1.0_dp, 2.0_dp,0.4_dp)
       do n = NCl-Ng, NCu+Ng
@@ -149,7 +138,7 @@ contains
         end if
       end do
       call exact123Problem(time_max)
-    case(IC_THREE_RIGHT_WAVES)
+    case(THREE_RIGHT_WAVES)
       Wl = WState(5.99924_dp,19.5975_dp,460.894_dp)
       Wr = WState(5.99242_dp,-6.19633_dp,46.095_dp)
       do n = NCl-Ng, NCu+Ng
@@ -160,7 +149,7 @@ contains
         end if
       end do
       call exact3RightWaves(time_max)
-    case(IC_STATIONARY_CONTACT)
+    case(STATIONARY_CONTACT)
       Wl = WState(1.0_dp,-19.59745_dp,1000.0_dp)
       Wr = WState(1.0_dp,-19.59745_dp,0.01_dp)
       do n = NCl-Ng, NCu+Ng
@@ -171,7 +160,7 @@ contains
         end if
       end do
       call exactStationaryContact(time_max)
-    case(IC_SUBSONIC_NOZZLE)
+    case(SUBSONIC_NOZZLE)
       Wl = WState(1.1409_dp,65.451_dp,97534.0_dp)
       Wr = WState(1.1008_dp,113.06_dp,92772.0_dp)
       do nc = NCl-Ng, NCu+Ng
@@ -182,7 +171,9 @@ contains
         end if
         !call Nozzle(Cell(nc)%Xc,Cell(nc)%Xa,IC_SUBSONIC_NOZZLE,We(nc))
       end do
-    case(IC_TRANSONIC_NOZZLE)
+      BCl = BC_FIXED
+      BCr = BC_CONSTANT_EXTRAPOLATION
+    case(TRANSONIC_NOZZLE)
       Wl = WState(1.1288_dp,82.693_dp,96085.0_dp)
       Wr = WState(1.0261_dp,151.62_dp,84974.0_dp)
       do nc = NCl-Ng, NCu+Ng
@@ -193,21 +184,23 @@ contains
         end if
         !call Nozzle(Cell(nc)%Xc,Cell(nc)%Xa,IC_TRANSONIC_NOZZLE,We(nc))
       end do
-    case(IC_SQUARE_WAVE)
-      Wl%rho = 1.0_dp ; Wl%u = 100.0_dp ; Wl%p = 100000.0_dp
-      Wr%rho = 2.0_dp ; Wr%u = 100.0_dp ; Wr%p = 100000.0_dp
+      BCl = BC_FIXED
+      BCr = BC_CONSTANT_EXTRAPOLATION
+    case(SQUARE_WAVE)
+      Wl%rho = 1.0_dp*rhom ; Wl%u = um ; Wl%p = pm
+      Wr%rho = 2.0_dp*rhom ; Wr%u = um ; Wr%p = pm
       do nc = NCl-Ng, NCu+Ng
-        if(Cell(nc)%Xc.le.0.4_dp) then
+        if((Cell(nc)%Xc.le.-0.5_dp*wm).or.(Cell(nc)%Xc.ge.0.5_dp)) then
           W(nc) = Wl
-        else if(Cell(nc)%Xc.lt.0.6_dp) then
-          W(nc) = Wr
         else
-          W(nc) = Wl
+          W(nc) = Wr
         end if
-        !call Square_Wave(Cell(nc)%Xc,time_max,We(nc))
+        !call exactSquareWave(Cell(nc)%Xc,time_max,We(nc))
       end do
-    case(IC_SINE_SQUARED_WAVE)
-      Wl%rho = 1.225_dp ; Wl%u = 100.0_dp ; Wl%p = 101325.0_dp
+      BCl = BC_PERIODIC
+      BCr = BC_PERIODIC
+    case(SINE_SQUARED_WAVE)
+      Wl%rho = rhom ; Wl%u = um ; Wl%p = pm
       do nc = NCl-Ng, NCu+Ng
         if(6.0_dp*Cell(nc)%Xc.lt.1.0_dp) then
           W(nc) = Wl
@@ -219,7 +212,9 @@ contains
         end if
         !call Sine_Squared_Wave(Cell(nc)%Xc,time_max,We(nc))
       end do
-    case(IC_SEMI_ELLIPSE_WAVE)
+      BCl = BC_PERIODIC
+      BCr = BC_PERIODIC
+    case(SEMI_ELLIPSE_WAVE)
       Wl%rho = 1.225_dp ; Wl%u = 100.0_dp ; Wl%p = 101325.0_dp
       do nc = NCl-Ng, NCu+Ng
         if(6.0_dp*Cell(nc)%Xc.lt.1.0_dp) then
@@ -232,13 +227,14 @@ contains
         end if
         !call Semi_Ellipse_Wave(Cell(nc)%Xc,time_max,We(nc))
       end do
+      BCl = BC_PERIODIC
+      BCr = BC_PERIODIC
     end select
     do n = NCl-Ng, NCu+Ng
       call transform_W_to_U(W(n),U(n))
     end do
     return
   end subroutine applyICs
-
 
   !---------------------------------------------------------------------
   !---------------------------------------------------------------------
@@ -286,7 +282,7 @@ contains
         U(NCu+n) = U(NCl+n-1)
       end do
     end select
-  end subroutine ApplyBCs
-
+    return
+  end subroutine applyBCs
 
 end module solnBlock_module

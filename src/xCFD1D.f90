@@ -8,7 +8,6 @@
 program xcfd1d
   use realSizes, only: dp
   use inputParams
-  use gasConstants, only: setGas
   use cfdParams
   use Euler1D_UState
   use explSolver
@@ -51,8 +50,8 @@ program xcfd1d
   write(6,"(a)") ' Problem setup and initialization:'
 
   write(6,"(a)") ' -> Memory allocation'
-  call gridBlock_allocate(ierr,num_cells,num_ghost)
-  if(ierr.eq.0) call solnBlock_allocate(ierr,num_cells,num_ghost,BCleft,BCright)
+  call gridBlock_allocate(ierr,i_problem,num_cells,num_ghost)
+  if(ierr.eq.0) call solnBlock_allocate(ierr,num_cells,num_ghost)
   if(ierr.eq.0) call solnExplicit_allocate
   if(ierr.ne.0) then
    write(6,"(a)") ' ERROR during allocation, error number ', ierr
@@ -60,11 +59,10 @@ program xcfd1d
   end if
 
   write(6,"(a)") ' -> Grid generation'
-  call createBlock(xl,xr,BCleft,BCright,str_fcn,beta_str,tau_str)
+  call createBlock
 
   write(6,"(a)") ' -> Setting initial conditions'
-  call setGas(i_gas_type)
-  call applyICs(init_type)
+  call applyICs
 
   write(6,"(a)") ' -> Applying boundary conditions'
   call applyBCs

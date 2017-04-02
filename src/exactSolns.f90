@@ -316,7 +316,7 @@ contains
   end subroutine exactStrongSod
 
   !---------------------------------------------------------------------
-  !Left Rarefaction, Stationary Contact, Right Shock Problem
+  !Stationary Contact (w/ left rarefaction and right shock)
   !(x,t) = (0.8,0.012), x in [0,1]
   !Wl = Euler1D_pState(1.0,-19.59745,1000.0)
   !Wr = Euler1D_pState(1.0,-19.59745,0.01)
@@ -345,7 +345,7 @@ contains
     Wl = WState(1.0_dp,-19.59745_dp,1000.0_dp)
     al = a_W(Wl)
     !Initialize the right state
-    Wr = WState(0.125_dp,-19.59745_dp,0.01_dp)
+    Wr = WState(1.0_dp,-19.59745_dp,0.01_dp)
     ar = a_W(Wr)
     !If initial conditions
     if(t.lt.TOLER) then
@@ -391,7 +391,7 @@ contains
   end subroutine exactStationaryContact
 
   !---------------------------------------------------------------------
-  !Three Right, Discontinuities Problem
+  !Three Right Discontinuities Problem
   !(x,t) = (0.4,0.035), x in [0,1]
   !Wl = Euler1D_pState(5.99924,19.59750,460.894)
   !Wr = Euler1D_pState(5.99242,-6.19633, 46.095)
@@ -466,15 +466,15 @@ contains
   !Subsonic: (Sthroat,xShock) = (0.8,11.0)
   !Transonic: (Sthroat,xShock) = (1.0,7.0)
   !---------------------------------------------------------------------
-  recursive subroutine Nozzle(ic_type,t)
+  recursive subroutine Nozzle(t)
     use realsizes, only: dp
     use numbers, only: TOLER
-    use cfdParams, only: IC_SUBSONIC_NOZZLE, IC_TRANSONIC_NOZZLE
+    use inputParams, only: i_problem
+    use cfdParams, only: SUBSONIC_NOZZLE, TRANSONIC_NOZZLE
     use gasConstants, only: g, gm1, gp1, gm1i, gp1i, R, alpha, alphai, betai
     use Euler1D_WState
     implicit none
     !Argument variables:
-    integer,  intent(in)  :: ic_type
     real(dp), intent(in)  :: t
     !Local variables:
     real(dp)              :: xs, Ms !Location and Mach number at sonic point
@@ -540,11 +540,8 @@ contains
 
   !---------------------------------------------------------------------
   !Square Density Wave
-  !Wl = Euler1D_pState(1.225,100.0,101325.0)
-  !Wm = Euler1D_pState(2.450,100.0,101325.0)
-  !Wr = Euler1D_pState(1.225,100.0,101325.0)
   !---------------------------------------------------------------------
-  subroutine Square_Wave(t)
+  subroutine exactSquareWave(t)
     use realsizes, only: dp
     use Euler1D_WState
     implicit none
@@ -555,7 +552,7 @@ contains
     real(dp)              :: xl, xr
     type(Euler1D_W_State) :: W, Wm
     !Allocate exact solution arrays
-    ne = 101
+    ne = 3
     allocate(xe(ne))
     allocate(We(ne))
     !Initialize the wave states
@@ -577,17 +574,18 @@ contains
       if((xe(n).gt.xl).or.(xe(n).lt.xr)) We(n) = Wm
     end do
     return
-  end subroutine Square_Wave
+  end subroutine exactSquareWave
 
   !---------------------------------------------------------------------
   !Sine-Squared Density Wave
   !---------------------------------------------------------------------
-  subroutine Sine_Squared_Wave(x,t,W)
+  subroutine exactSineSquaredWave(x,t,W)
     use realsizes, only: dp
     use numbers, only: PI
     use Euler1D_WState
     implicit none
-    real(dp), intent(in)               :: x, t
+    real(dp),              intent(in)  :: x
+    real(dp),              intent(in)  :: t
     type(Euler1D_W_State), intent(out) :: W
     !Set the primitive solution state
     W%rho = 1.225_dp ; W%u = 100.0_dp ; W%p = 101325.0_dp
@@ -598,16 +596,17 @@ contains
     else
     end if
     return
-  end subroutine Sine_Squared_Wave
+  end subroutine exactSineSquaredWave
 
   !---------------------------------------------------------------------
   !Semi-Ellipse Density Wave
   !---------------------------------------------------------------------
-  subroutine Semi_Ellipse_Wave(x,t,W)
+  subroutine exactSemiEllipseWave(x,t,W)
     use realsizes, only: dp
     use Euler1D_WState
     implicit none
-    real(dp), intent(in)               :: x, t
+    real(dp),              intent(in)  :: x
+    real(dp),              intent(in)  :: t
     type(Euler1D_W_State), intent(out) :: W
     !Set the primitive solution state.
     W%rho = 1.225_dp ; W%u = 100.0_dp ; W%p = 101325.0_dp
@@ -618,7 +617,7 @@ contains
     else
     end if
     return
-  end subroutine Semi_Ellipse_Wave
+  end subroutine exactSemiEllipseWave
 
 
 end module exactSoln_module
