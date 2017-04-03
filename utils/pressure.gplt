@@ -1,0 +1,6 @@
+set xlabel "x"
+set ylabel "pressure"
+set grid
+plot "exact_gnuplot.dat" using 1:4 title "exact" with lines, \
+     "output_gnuplot.dat" using 1:4 title "cfd" with lines
+pause -1  "Hit return to continue"

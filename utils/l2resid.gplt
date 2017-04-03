@@ -1,0 +1,8 @@
+set xlabel "n"
+set ylabel "l2norm"
+set logscale y
+set grid
+plot "residual.dat" using 1:6 title "rho" with lines, \
+     "residual.dat" using 1:7 title "du" with lines, \
+     "residual.dat" using 1:8 title "E" with lines
+pause -1  "Hit return to continue"

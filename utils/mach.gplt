@@ -1,0 +1,6 @@
+set xlabel "x"
+set ylabel "Mach Number"
+set grid
+plot "exact_gnuplot.dat" using 1:7 title "exact" with lines, \
+     "output_gnuplot.dat" using 1:7 title "cfd" with lines
+pause -1  "Hit return to continue"
