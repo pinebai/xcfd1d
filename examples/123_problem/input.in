@@ -1,5 +1,5 @@
 #----------------------------------------+
-#  123 PROBLEM                           |
+# 123 PROBLEM                            |
 #                                        |
 # (x,t) = (0.50,0.10), (0 <= x <= 1.0)   |
 #                                        |
@@ -53,8 +53,9 @@
 # OUTPUT FORMATS:
 &output
  plot_tecplot = false
- plot_gnuplot = true
- plot_eps = false
+ plot_gnuplot = false
+ plot_eps     = false
+ plot_python  = true
 /
 
 # Density = 1

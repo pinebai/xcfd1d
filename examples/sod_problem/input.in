@@ -1,5 +1,5 @@
 #----------------------------------------+
-#  SOD'S PROBLEM                         |
+# SOD'S PROBLEM                          |
 #                                        |
 # (x,t) = (0.50,0.25), (0 <= x <= 1.0)   |
 #                                        |
@@ -55,9 +55,9 @@
 # OUTPUT FORMATS:
 &output
  plot_tecplot = false, 
- plot_gnuplot = true,
+ plot_gnuplot = false,
  plot_eps     = false,
- plot_python  = false,
+ plot_python  = true,
 /
 
 # EPS PLOTS:

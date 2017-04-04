@@ -1,5 +1,5 @@
 #----------------------------------------------+
-#  THREE RIGHT DISCONTINUITIES                 |
+# THREE RIGHT DISCONTINUITIES                  |
 #                                              |
 # (x,t) = (0.40,0.035), (0 <= x <= 1.0)        |
 #                                              |
@@ -53,8 +53,9 @@
 # OUTPUT FORMATS:
 &output
  plot_tecplot = false
- plot_gnuplot = true
+ plot_gnuplot = false
  plot_eps     = false
+ plot_python  = true
 /
 
 # Density = 1

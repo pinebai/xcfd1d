@@ -52,9 +52,9 @@
 # OUTPUT FORMATS:
 &output
  plot_tecplot = false,
- plot_gnuplot = true,
+ plot_gnuplot = false,
  plot_eps = false,
- plot_python = false,
+ plot_python = true,
 /
 
 # Density = 1
