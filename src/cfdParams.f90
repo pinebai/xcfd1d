@@ -18,7 +18,6 @@ module cfdParams
   integer, parameter :: TRANSONIC_NOZZLE = 8
   integer, parameter :: SQUARE_WAVE = 9
   integer, parameter :: SINE_SQUARED_WAVE = 10
-  integer, parameter :: SEMI_ELLIPSE_WAVE = 11
 
   !Define grid types:
   integer, parameter :: GRID_SHOCK_TUBE = 0

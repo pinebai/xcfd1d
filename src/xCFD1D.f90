@@ -88,7 +88,7 @@ program xcfd1d
      if(time + dtime.gt.time_max) then
        dtime = time_max-time
      end if
-     call setGlobalTimeStep(dTime)
+     call setGlobalTimeStep(dtime)
    end if
 
    !Update solution for next time step using a multistage time-stepping scheme.
@@ -119,9 +119,17 @@ program xcfd1d
 
    !Output progress information for the calculation.
    if(n_steps-i_output_freq*(n_steps/i_output_freq).eq.0) then
-     write(6,100) n_steps, time, l2norm%rho, l2norm%du, l2norm%E
+     if(n_steps.lt.1000) then
+       write(6,100) n_steps, time, l2norm%rho, l2norm%du, l2norm%E
+     else if(n_steps.lt.10000) then
+       write(6,101) n_steps, time, l2norm%rho, l2norm%du, l2norm%E
+     else
+       write(6,102) n_steps, time, l2norm%rho, l2norm%du, l2norm%E
+     end if
    end if
 100 format(' n = ',I3, ' t = ',F8.6,' l2_norm = ',E12.6,' ',E12.6,' ',E12.6)
+101 format(' n = ',I4, ' t = ',F8.6,' l2_norm = ',E12.6,' ',E12.6,' ',E12.6)
+102 format(' n = ',I5, ' t = ',F8.6,' l2_norm = ',E12.6,' ',E12.6,' ',E12.6)
 
   end do time_marching
 
@@ -136,22 +144,27 @@ program xcfd1d
 
   !Output cell-centered data in Tecplot format:
   if(plot_tecplot) then
-   write(6,"(a)") ' -> Output cell-centered data for plotting with Tecplot'
-   call tecplot_output
-   call tecplot_residual
+    write(6,"(a)") ' -> Output cell-centered data for plotting with Tecplot'
+    call tecplot_output
+    call tecplot_residual
   end if
 
   !Output cell-centered data in gnuplot format:
   if(plot_gnuplot) then
-   write(6,"(a)") ' -> Output cell-centered data for plotting with gnuplot'
-   call gnuplot_output
-   call gnuplot_residual
+    write(6,"(a)") ' -> Output cell-centered data for plotting with gnuplot'
+    call gnuplot_output
   end if
 
   !Output plots of cell-centered data directly as eps figures:
   if(plot_eps) then
-   write(6,"(a)") ' -> Creating EPS figures with cell-centered data'
-   call eps_output
+    write(6,"(a)") ' -> Creating EPS figures with cell-centered data'
+    call eps_output
+  end if
+
+  !Output cell-centered data in format for python plotting:
+  if(plot_python) then
+    write(6,"(a)") ' -> Output cell-centered data for plotting with python/matplotlib'
+    call python_output
   end if
 
   !Memory deallocation:  

@@ -190,45 +190,26 @@ contains
       Wl%rho = 1.0_dp*rhom ; Wl%u = um ; Wl%p = pm
       Wr%rho = 2.0_dp*rhom ; Wr%u = um ; Wr%p = pm
       do nc = NCl-Ng, NCu+Ng
-        if((Cell(nc)%Xc.le.-0.5_dp*wm).or.(Cell(nc)%Xc.ge.0.5_dp)) then
+        if((Cell(nc)%Xc.le.-0.5_dp*wm).or.(Cell(nc)%Xc.ge.0.5_dp*wm)) then
           W(nc) = Wl
         else
           W(nc) = Wr
         end if
-        !call exactSquareWave(Cell(nc)%Xc,time_max,We(nc))
       end do
       BCl = BC_PERIODIC
       BCr = BC_PERIODIC
+      call exactSquareWave(time_max)
     case(SINE_SQUARED_WAVE)
       Wl%rho = rhom ; Wl%u = um ; Wl%p = pm
       do nc = NCl-Ng, NCu+Ng
-        if(6.0_dp*Cell(nc)%Xc.lt.1.0_dp) then
-          W(nc) = Wl
-        else if(Cell(nc)%Xc.le.0.5_dp) then
-          W(nc) = Wl
-          W(nc)%rho = W(nc)%rho*(1.0_dp + (sin(0.5_dp*PI*(6.0_dp*Cell(nc)%Xc-1.0_dp))**2))
-        else
-          W(nc) = Wl
+        W(nc) = Wl
+        if((Cell(nc)%Xc.ge.-0.5_dp*wm).and.(Cell(nc)%Xc.le.0.5_dp*wm)) then
+          W(nc)%rho = W(nc)%rho*(1.0_dp + 0.5_dp*(cos(PI*Cell(nc)%Xc/wm)**2))
         end if
-        !call Sine_Squared_Wave(Cell(nc)%Xc,time_max,We(nc))
       end do
       BCl = BC_PERIODIC
       BCr = BC_PERIODIC
-    case(SEMI_ELLIPSE_WAVE)
-      Wl%rho = 1.225_dp ; Wl%u = 100.0_dp ; Wl%p = 101325.0_dp
-      do nc = NCl-Ng, NCu+Ng
-        if(6.0_dp*Cell(nc)%Xc.lt.1.0_dp) then
-          W(nc) = Wl
-        else if(Cell(nc)%Xc.le.0.50_dp) then
-          W(nc) = Wl
-          W(nc)%rho = W(nc)%rho*(1.0_dp + sqrt(1.0_dp-(6.0_dp*Cell(nc)%Xc-2.0_dp)**2))
-        else
-          W(nc) = Wl
-        end if
-        !call Semi_Ellipse_Wave(Cell(nc)%Xc,time_max,We(nc))
-      end do
-      BCl = BC_PERIODIC
-      BCr = BC_PERIODIC
+      call exactSineSquaredWave(time_max)
     end select
     do n = NCl-Ng, NCu+Ng
       call transform_W_to_U(W(n),U(n))

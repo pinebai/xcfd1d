@@ -1,10 +1,11 @@
 module exactSoln_module
   use realsizes, only: dp
+  use gridBlock_module
   use Euler1D_WState
   implicit none
 
   integer                                          :: ne
-  real(dp),              allocatable, dimension(:) :: xe
+  type(cellGeom)       , allocatable, dimension(:) :: Xe
   type(Euler1D_W_State), allocatable, dimension(:) :: We
 
 contains
@@ -12,7 +13,7 @@ contains
   !Deallocate routine -- allocation done in specific solution routines
   subroutine exactSoln_deallocate
     implicit none
-    if(allocated(xe)) deallocate(xe)
+    if(allocated(Xe)) deallocate(Xe)
     if(allocated(We)) deallocate(We)
     return
   end subroutine exactSoln_deallocate
@@ -32,14 +33,19 @@ contains
     !Argument variables:
     real(dp), intent(in)  :: t
     !Local variables:
-    integer               :: i
+    integer               :: n
     real(dp)              :: xo, dx
     real(dp)              :: al, ar, als, ars, a
     type(Euler1D_W_State) :: Wl, Wr, Wls, Wrs, Wint
     !Allocate exact solution arrays
     ne = 27
-    allocate(xe(ne))
+    allocate(Xe(ne))
     allocate(We(ne))
+    do n = 1, ne
+      Xe(n)%xc = 0.0_dp ; Xe(n)%dx = 0.0_dp
+      Xe(n)%xa = 0.0_dp ; Xe(n)%da = 0.0_dp
+      call Vacuum_W(We(n))
+    end do
     !Location of jump conditions
     xo = 0.5_dp
     !Initialize the left state
@@ -50,9 +56,9 @@ contains
     ar = a_W(Wr)
     !If initial conditions
     if(t.lt.TOLER) then
-      xe(1) = 0.0_dp
-      xe(2:26) = xo
-      xe(27) = 1.0_dp
+      Xe(1)%xc = 0.0_dp
+      Xe(2:26)%xc = xo
+      Xe(27)%xc = 1.0_dp
       We(1:25) = Wl
       We(26:27) = Wr
       return
@@ -62,31 +68,31 @@ contains
     als = a_W(Wls)
     ars = a_W(Wrs)
     !1    - Left-side of domain
-    xe(1) = 0.0_dp
+    Xe(1)%xc = 0.0_dp
     We(1) = Wl
     !2-22 - Head-to-tail of rarefaction wave
     dx = ((Wls%u - als) - (Wl%u - al))*t/20.0_dp
-    do i = 2, 22
-      xe(i) = xo + (Wl%u - al)*t + dx*(i-2)
-      We(i)%u = alphai*(Wl%u + 2.0_dp*gm1i*al) + 2.0_dp*gp1i*(xe(i)-xo)/t
-      a = We(i)%u - (xe(i)-xo)/t
-      We(i)%p = Wl%p*((a/al)**betai)
-      We(i)%rho = g*We(i)%p/sqr(a)
+    do n = 2, 22
+      Xe(n)%xc = xo + (Wl%u - al)*t + dx*(n-2)
+      We(n)%u = alphai*(Wl%u + 2.0_dp*gm1i*al) + 2.0_dp*gp1i*(Xe(n)%xc-xo)/t
+      a = We(n)%u - (Xe(n)%xc-xo)/t
+      We(n)%p = Wl%p*((a/al)**betai)
+      We(n)%rho = g*We(n)%p/sqr(a)
     end do
     !23   - Contact surface (rarefaction side)
-    xe(23) = xo + Wls%u*t
+    xe(23)%xc = xo + Wls%u*t
     We(23) = Wls
     !24   - Contact surface (shock side)
-    xe(24) = xe(23)
+    xe(24)%xc = Xe(23)%xc
     We(24) = Wrs
     !25   - Shock wave (contact surface side)
-    xe(25) = xo + (Wrs%u + ars*sqrt(beta*alpha*Wr%p/Wrs%p + beta))*t
+    xe(25)%xc = xo + (Wrs%u + ars*sqrt(beta*alpha*Wr%p/Wrs%p + beta))*t
     We(25) = Wrs
     !26   - Shock wave (silent side)
-    xe(26) = xe(25)
+    xe(26)%xc = Xe(25)%xc
     We(26) = Wr
     !27   - Right-side of domain
-    xe(27) = 1.0_dp
+    xe(27)%xc = 1.0_dp
     We(27) = Wr
     return
   end subroutine exactSod
@@ -107,14 +113,19 @@ contains
     !Argument variables:
     real(dp), intent(in)  :: t
     !Local variables:
-    integer               :: i
+    integer               :: n
     real(dp)              :: xo, dx
     real(dp)              :: al, ar, als, ars, a
     type(Euler1D_W_State) :: Wl, Wr, Wls, Wrs, Wint
     !Allocate exact solution arrays
     ne = 27
-    allocate(xe(ne))
+    allocate(Xe(ne))
     allocate(We(ne))
+    do n = 1, ne
+      Xe(n)%xc = 0.0_dp ; Xe(n)%dx = 0.0_dp
+      Xe(n)%xa = 0.0_dp ; Xe(n)%da = 0.0_dp
+      call Vacuum_W(We(n))
+    end do
     !Initial location of jump conditions
     xo = 0.3_dp
     !Initialize the left state
@@ -127,9 +138,9 @@ contains
     ar = a_W(Wr)
     !If initial conditions
     if(t.lt.TOLER) then
-      xe(1) = 0.0_dp
-      xe(2:26) = xo
-      xe(27) = 1.0_dp
+      Xe(1)%xc = 0.0_dp
+      Xe(2:26)%xc = xo
+      Xe(27)%xc = 1.0_dp
       We(1:25) = Wl
       We(25:27) = Wr
       return
@@ -139,31 +150,31 @@ contains
     als = a_W(Wls)
     ars = a_W(Wrs)
     !1    - Left-side of domain
-    xe(1) = 0.0_dp
+    Xe(1)%xc = 0.0_dp
     We(1) = Wl
     !2-22 - Head-to-tail of rarefaction wave
     dx = ((Wls%u - als) - (Wl%u - al))*t/20.0_dp
-    do i = 2, 22
-      xe(i) = xo + (Wl%u - al)*t + dx*(i-2)
-      We(i)%u = alphai*(Wl%u + 2.0_dp*gm1i*al) + 2.0_dp*gp1i*(xe(i)-xo)/t
-      a = We(i)%u - (xe(i)-xo)/t
-      We(i)%p = Wl%p*((a/al)**betai)
-      We(i)%rho = g*We(i)%p/sqr(a)
+    do n = 2, 22
+      Xe(n)%xc = xo + (Wl%u - al)*t + dx*(n-2)
+      We(n)%u = alphai*(Wl%u + 2.0_dp*gm1i*al) + 2.0_dp*gp1i*(Xe(n)%xc-xo)/t
+      a = We(n)%u - (Xe(n)%xc-xo)/t
+      We(n)%p = Wl%p*((a/al)**betai)
+      We(n)%rho = g*We(n)%p/sqr(a)
     end do
     !23   - Contact surface (rarefaction side)
-    xe(23) = xo + Wls%u*t
+    Xe(23)%xc = xo + Wls%u*t
     We(23) = Wls
     !24   - Contact surface (shock side)
-    xe(24) = xe(23)
+    Xe(24)%xc = Xe(23)%xc
     We(24) = Wrs
     !25   - Shock wave (contact surface side)
-    xe(25) = xo + (Wrs%u + ars*sqrt(beta*alpha*Wr%p/Wrs%p + beta))*t
+    Xe(25)%xc = xo + (Wrs%u + ars*sqrt(beta*alpha*Wr%p/Wrs%p + beta))*t
     We(25) = Wrs
     !26   - Shock wave (silent side)
-    xe(26) = xe(25)
+    Xe(26)%xc = Xe(25)%xc
     We(26) = Wr
     !27   - Right-side of domain
-    xe(27) = 1.0_dp
+    Xe(27)%xc = 1.0_dp
     We(27) = Wr
     return
   end subroutine exactModifiedSod
@@ -184,14 +195,19 @@ contains
     !Argument variables:
     real(dp), intent(in)  :: t
     !Local variables:
-    integer               :: i
+    integer               :: n
     real(dp)              :: xo, dx
     real(dp)              :: al, ar, als, ars, a
     type(Euler1D_W_State) :: Wl, Wr, Wls, Wrs, Wint
     !Allocate exact solution arrays
     ne = 44
-    allocate(xe(ne))
+    allocate(Xe(ne))
     allocate(We(ne))
+    do n = 1, ne
+      Xe(n)%xc = 0.0_dp ; Xe(n)%dx = 0.0_dp
+      Xe(n)%xa = 0.0_dp ; Xe(n)%da = 0.0_dp
+      call Vacuum_W(We(n))
+    end do
     !Initial location of jump conditions
     xo = 0.5_dp
     !Initialize the left state
@@ -202,9 +218,9 @@ contains
     ar = a_W(Wr)
     !If initial conditions
     if(t.lt.TOLER) then
-      xe(1) = 0.0_dp
-      xe(2:43) = xo
-      xe(44) = 1.0_dp
+      Xe(1)%xc = 0.0_dp
+      Xe(2:43)%xc = xo
+      Xe(44)%xc = 1.0_dp
       We(1:22) = Wl
       We(23:44) = Wr
       return
@@ -214,28 +230,28 @@ contains
     als = a_W(Wls)
     ars = a_W(Wrs)
     !1    - Left-side of domain
-    xe(1) = 0.0_dp
+    Xe(1)%xc = 0.0_dp
     We(1) = Wl
     !2-22 - Head-to-tail of rarefation wave
     dx = ((Wls%u - als) - (Wl%u - al))*t/20.0_dp
-    do i = 2, 22
-      xe(i) = xo + (Wl%u - al)*t + dx*(i-2)
-      We(i)%u = alphai*(Wl%u + 2.0_dp*gm1i*al) + 2.0_dp*gp1i*(xe(i)-xo)/t
-      a = We(i)%u - (xe(i)-xo)/t
-      We(i)%p = Wl%p*((a/al)**betai)
-      We(i)%rho = g*We(i)%p/sqr(a)
+    do n = 2, 22
+      Xe(n)%xc = xo + (Wl%u - al)*t + dx*(n-2)
+      We(n)%u = alphai*(Wl%u + 2.0_dp*gm1i*al) + 2.0_dp*gp1i*(Xe(n)%xc-xo)/t
+      a = We(n)%u - (Xe(n)%xc-xo)/t
+      We(n)%p = Wl%p*((a/al)**betai)
+      We(n)%rho = g*We(n)%p/sqr(a)
     end do
     !23-43 - Tail-to-head of rarefation wave
     dx = ((Wr%u + ar) - (Wrs%u + ars))*t/20.0_dp
-    do i = 43, 23, -1
-      xe(i) = xo + (Wr%u + ar)*t + dx*(i-43)
-      We(i)%u = 2.0_dp*gp1i*(xe(i)-xo)/t - alphai*(Wrs%u + 2.0_dp*gm1i*ars)
-      a = (xe(i)-xo)/t - We(i)%u
-      We(i)%p = Wr%p*((a/ar)**betai)
-      We(i)%rho = g*We(i)%p/sqr(a)
+    do n = 43, 23, -1
+      Xe(n)%xc = xo + (Wr%u + ar)*t + dx*(n-43)
+      We(n)%u = 2.0_dp*gp1i*(Xe(n)%xc-xo)/t - alphai*(Wrs%u + 2.0_dp*gm1i*ars)
+      a = (Xe(n)%xc-xo)/t - We(n)%u
+      We(n)%p = Wr%p*((a/ar)**betai)
+      We(n)%rho = g*We(n)%p/sqr(a)
     end do
     !44   - Right-side of domain
-    xe(44) = 1.0_dp
+    Xe(44)%xc = 1.0_dp
     We(44) = Wr
     return
   end subroutine exact123Problem
@@ -256,14 +272,19 @@ contains
     !Argument variables:
     real(dp), intent(in)  :: t
     !Local variables:
-    integer               :: i
+    integer               :: n
     real(dp)              :: xo, dx
     real(dp)              :: al, ar, als, ars, a
     type(Euler1D_W_State) :: Wl, Wr, Wls, Wrs, Wint
     !Allocate exact solution arrays
     ne = 27
-    allocate(xe(ne))
+    allocate(Xe(ne))
     allocate(We(ne))
+    do n = 1, ne
+      Xe(n)%xc = 0.0_dp ; Xe(n)%dx = 0.0_dp
+      Xe(n)%xa = 0.0_dp ; Xe(n)%da = 0.0_dp
+      call Vacuum_W(We(n))
+    end do
     !Initial location of jump conditions
     xo = 0.5_dp
     !Initialize the left state
@@ -274,9 +295,9 @@ contains
     ar = a_W(Wr)
     !If initial conditions
     if(t.lt.TOLER) then
-      xe(1) = 0.0_dp
-      xe(2:26) = xo
-      xe(27) = 1.0_dp
+      Xe(1)%xc = 0.0_dp
+      Xe(2:26)%xc = xo
+      Xe(27)%xc = 1.0_dp
       We(1:25) = Wl
       We(26:27) = Wr
       return
@@ -286,31 +307,31 @@ contains
     als = a_W(Wls)
     ars = a_W(Wrs)
     !1    - Left-side of domain
-    xe(1) = 0.0_dp
+    Xe(1)%xc = 0.0_dp
     We(1) = Wl
     !2-22 - Head-to-tail of rarefaction wave
     dx = ((Wls%u - als) - (Wl%u - al))*t/20.0_dp
-    do i = 2, 22
-      xe(i) = xo + (Wl%u - al)*t + dx*(i-2)
-      We(i)%u = alphai*(Wl%u + 2.0_dp*gm1i*al) + 2.0_dp*gp1i*(xe(i)-xo)/t
-      a = We(i)%u - (xe(i)-xo)/t
-      We(i)%p = Wl%p*((a/al)**betai)
-      We(i)%rho = g*We(i)%p/sqr(a)
+    do n = 2, 22
+      Xe(n)%xc = xo + (Wl%u - al)*t + dx*(n-2)
+      We(n)%u = alphai*(Wl%u + 2.0_dp*gm1i*al) + 2.0_dp*gp1i*(Xe(n)%xc-xo)/t
+      a = We(n)%u - (Xe(n)%xc-xo)/t
+      We(n)%p = Wl%p*((a/al)**betai)
+      We(n)%rho = g*We(n)%p/sqr(a)
     end do
     !23   - Contact surface (rarefaction side)
-    xe(23) = xo + Wls%u*t
+    Xe(23)%xc = xo + Wls%u*t
     We(23) = Wls
     !24   - Contact surface (shock side)
-    xe(24) = xe(23)
+    Xe(24)%xc = Xe(23)%xc
     We(24) = Wrs
     !25   - Shock wave (contact surface side)
-    xe(25) = xo + (Wrs%u + ars*sqrt(beta*alpha*Wr%p/Wrs%p + beta))*t
+    Xe(25)%xc = xo + (Wrs%u + ars*sqrt(beta*alpha*Wr%p/Wrs%p + beta))*t
     We(25) = Wrs
     !26   - Shock wave (silent side)
-    xe(26) = xe(25)
+    Xe(26)%xc = Xe(25)%xc
     We(26) = Wr
     !27   - Right-side of domain
-    xe(27) = 1.0_dp
+    Xe(27)%xc = 1.0_dp
     We(27) = Wr
     return
   end subroutine exactStrongSod
@@ -331,14 +352,19 @@ contains
     !Argument variables:
     real(dp), intent(in)  :: t
     !Local variables:
-    integer               :: i
+    integer               :: n
     real(dp)              :: xo, dx
     real(dp)              :: al, ar, als, ars, a
     type(Euler1D_W_State) :: Wl, Wr, Wls, Wrs, Wint
     !Allocate exact solution arrays
     ne = 27
-    allocate(xe(ne))
+    allocate(Xe(ne))
     allocate(We(ne))
+    do n = 1, ne
+      Xe(n)%xc = 0.0_dp ; Xe(n)%dx = 0.0_dp
+      Xe(n)%xa = 0.0_dp ; Xe(n)%da = 0.0_dp
+      call Vacuum_W(We(n))
+    end do
     !Initial location of jump conditions
     xo = 0.8_dp
     !Initialize the left state
@@ -349,9 +375,9 @@ contains
     ar = a_W(Wr)
     !If initial conditions
     if(t.lt.TOLER) then
-      xe(1) = 0.0_dp
-      xe(2:26) = xo
-      xe(27) = 1.0_dp
+      Xe(1)%xc = 0.0_dp
+      Xe(2:26)%xc = xo
+      Xe(27)%xc = 1.0_dp
       We(1:25) = Wl
       We(26:27) = Wr
       return
@@ -361,31 +387,31 @@ contains
     als = a_W(Wls)
     ars = a_W(Wrs)
     !1    - Left-side of domain
-    xe(1) = 0.0_dp
+    Xe(1)%xc = 0.0_dp
     We(1) = Wl
     !2-22 - Head-to-tail of rarefaction wave
     dx = ((Wls%u - als) - (Wl%u - al))*t/20.0_dp
-    do i = 2, 22
-      xe(i) = xo + (Wl%u - al)*t + dx*(i-2)
-      We(i)%u = alphai*(Wl%u + 2.0_dp*gm1i*al) + 2.0_dp*gp1i*(xe(i)-xo)/t
-      a = We(i)%u - (xe(i)-xo)/t
-      We(i)%p = Wl%p*((a/al)**betai)
-      We(i)%rho = g*We(i)%p/sqr(a)
+    do n = 2, 22
+      Xe(n)%xc = xo + (Wl%u - al)*t + dx*(n-2)
+      We(n)%u = alphai*(Wl%u + 2.0_dp*gm1i*al) + 2.0_dp*gp1i*(Xe(n)%xc-xo)/t
+      a = We(n)%u - (Xe(n)%xc-xo)/t
+      We(n)%p = Wl%p*((a/al)**betai)
+      We(n)%rho = g*We(n)%p/sqr(a)
     end do
     !23   - Contact surface (rarefaction side)
-    xe(23) = xo + Wls%u*t
+    Xe(23)%xc = xo + Wls%u*t
     We(23) = Wls
     !24   - Contact surface (shock side)
-    xe(24) = xe(23)
+    Xe(24)%xc = xe(23)%xc
     We(24) = Wrs
     !25   - Shock wave (contact surface side)
-    xe(25) = xo + (Wrs%u + ars*sqrt(beta*alpha*Wr%p/Wrs%p + beta))*t
+    Xe(25)%xc = xo + (Wrs%u + ars*sqrt(beta*alpha*Wr%p/Wrs%p + beta))*t
     We(25) = Wrs
     !26   - Shock wave (silent side)
-    xe(26) = xe(25)
+    Xe(26)%xc = Xe(25)%xc
     We(26) = Wr
     !27   - Right-side of domain
-    xe(27) = 1.0_dp
+    Xe(27)%xc = 1.0_dp
     We(27) = Wr
     return
   end subroutine exactStationaryContact
@@ -405,14 +431,19 @@ contains
     !Argument variables:
     real(dp), intent(in)  :: t
     !Local variables:
-    integer               :: i
+    integer               :: n
     real(dp)              :: xo, dx
     real(dp)              :: al, ar, als, ars, a
     type(Euler1D_W_State) :: Wl, Wr, Wls, Wrs, Wint
     !Allocate exact solution arrays
     ne = 8
-    allocate(xe(ne))
+    allocate(Xe(ne))
     allocate(We(ne))
+    do n = 1, ne
+      Xe(n)%xc = 0.0_dp ; Xe(n)%dx = 0.0_dp
+      Xe(n)%xa = 0.0_dp ; Xe(n)%da = 0.0_dp
+      call Vacuum_W(We(n))
+    end do
     !Initial location of jump conditions
     xo = 0.4_dp
     !Initialize the left state
@@ -423,9 +454,9 @@ contains
     ar = a_W(Wr)
     !If initial conditions
     if(t.lt.TOLER) then
-      xe(1) = 0.0_dp
-      xe(2:7) = xo
-      xe(8) = 1.0_dp
+      Xe(1)%xc = 0.0_dp
+      Xe(2:7)%xc = xo
+      Xe(8)%xc = 1.0_dp
       We(1:6) = Wl
       We(7:8) = Wr
       return
@@ -435,28 +466,28 @@ contains
     als = a_W(Wls)
     ars = a_W(Wrs)
     !1 - Left-side of domain
-    xe(1) = 0.0_dp
+    Xe(1)%xc = 0.0_dp
     We(1) = Wl
     !2 - Before first shock-wave
-    xe(2) = xo + t*(Wl%u - al*sqrt(beta*alpha*Wls%p/Wl%p + beta))
+    Xe(2)%xc = xo + t*(Wl%u - al*sqrt(beta*alpha*Wls%p/Wl%p + beta))
     We(2) = Wl
     !3 - After first shock-wave
-    xe(3) = xo + t*(Wl%u - al*sqrt(beta*alpha*Wls%p/Wl%p + beta))
+    Xe(3)%xc = xo + t*(Wl%u - al*sqrt(beta*alpha*Wls%p/Wl%p + beta))
     We(3) = Wls
     !4 - Before contact-wave
-    xe(4) = xo + t*Wls%u
+    Xe(4)%xc = xo + t*Wls%u
     We(4) = Wls
     !5 - After contact-wave
-    xe(5) = xo + t*Wls%u
+    Xe(5)%xc = xo + t*Wls%u
     We(5) = Wrs
     !6 - Before last shock-wave
-    xe(6) = xo + t*(Wrs%u + ars*sqrt(beta*alpha*Wr%p/Wrs%p + beta))
+    Xe(6)%xc = xo + t*(Wrs%u + ars*sqrt(beta*alpha*Wr%p/Wrs%p + beta))
     We(6) = Wrs
     !7 - After last shock-wave
-    xe(7) = xo + t*(Wrs%u + ars*sqrt(beta*alpha*Wr%p/Wrs%p + beta))
+    Xe(7)%xc = xo + t*(Wrs%u + ars*sqrt(beta*alpha*Wr%p/Wrs%p + beta))
     We(7) = Wr
     !8 - Right-side of domain
-    xe(8) = 1.0_dp
+    Xe(8)%xc = 1.0_dp
     We(8) = Wr
     return
   end subroutine exact3RightWaves
@@ -495,7 +526,7 @@ contains
 !!$      Sstar = 1.0_dp
 !!$      xs = 7.0_dp
 !!$    end if
-!!$    allocate(xe(ne))
+!!$    allocate(Xe(ne))
 !!$    allocate(We(ne))
 !!$    !Set constants:
 !!$    Mo = 0.1_dp
@@ -543,6 +574,7 @@ contains
   !---------------------------------------------------------------------
   subroutine exactSquareWave(t)
     use realsizes, only: dp
+    use inputParams, only: rhom, um, pm, wm
     use Euler1D_WState
     implicit none
     !Argument variables:
@@ -550,74 +582,111 @@ contains
     !Local variables:
     integer               :: n
     real(dp)              :: xl, xr
-    type(Euler1D_W_State) :: W, Wm
-    !Allocate exact solution arrays
-    ne = 3
-    allocate(xe(ne))
-    allocate(We(ne))
+    type(Euler1D_W_State) :: Wo, Ww
     !Initialize the wave states
-    W%rho = 1.0_dp ; W%u = 100.0_dp ; W%p = 100000.0_dp
-    Wm%rho = 2.0_dp ; Wm%u = 100.0_dp ; Wm%p = 100000.0_dp
-    !Set left/right location of wave
-    xl = 0.4_dp + W%u*t
-    do while(xl.gt.1.0_dp)
-      xl = xl - 1.0_dp
-    end do
-    xr = 0.6_dp + W%u*t
-    do while(xr.gt.1.0_dp)
-      xr = xr - 1.0_dp
+    Wo%rho = 1.0_dp*rhom ; Wo%u = um ; Wo%p = pm
+    Ww%rho = 2.0_dp*rhom ; Ww%u = um ; Ww%p = pm
+    !Get wave limit locations:
+    xl = 0.0_dp - 0.5_dp*wm + t*um
+    xr = 0.0_dp + 0.5_dp*wm + t*um
+    if(um.gt.0.0_dp) then
+      do while(xl.gt.0.5_dp)
+        xl = xl - 1.0_dp
+      end do
+      do while(xr.gt.0.5_dp)
+        xr = xr - 1.0_dp
+      end do
+    else
+      do while(xl.lt.-0.5_dp)
+        xl = xl + 1.0_dp
+      end do
+      do while(xr.lt.-0.5_dp)
+        xr = xr + 1.0_dp
+      end do
+    end if
+    !Allocate exact solution arrays
+    ne = 6
+    allocate(Xe(ne))
+    allocate(We(ne))
+    do n = 1, ne
+      Xe(n)%xc = 0.0_dp ; Xe(n)%dx = 0.0_dp
+      Xe(n)%xa = 0.0_dp ; Xe(n)%da = 0.0_dp
+      call Vacuum_W(We(n))
     end do
     !Calculate the primitive solution state based on the location and time
-    do n = 1, ne
-      xe(n) = 0.0_dp + (n-1.0_dp)/(ne-1.0_dp)
-      We(n) = W
-      if((xe(n).gt.xl).or.(xe(n).lt.xr)) We(n) = Wm
-    end do
+    if(xl.lt.xr) then
+      Xe(1)%xc = -0.5_dp ; We(1) = Wo
+      Xe(2)%xc = xl      ; We(2) = Wo
+      Xe(3)%xc = xl      ; We(3) = Ww
+      Xe(4)%xc = xr      ; We(4) = Ww
+      Xe(5)%xc = xr      ; We(5) = Wo
+      Xe(6)%xc =  0.5_dp ; We(6) = Wo
+    else
+      Xe(1)%xc = -0.5_dp ; We(1) = Ww
+      Xe(2)%xc = xr      ; We(2) = Ww
+      Xe(3)%xc = xr      ; We(3) = Wo
+      Xe(4)%xc = xl      ; We(4) = Wo
+      Xe(5)%xc = xl      ; We(5) = Ww
+      Xe(6)%xc =  0.5_dp ; We(6) = Ww
+    end if
     return
   end subroutine exactSquareWave
 
   !---------------------------------------------------------------------
   !Sine-Squared Density Wave
   !---------------------------------------------------------------------
-  subroutine exactSineSquaredWave(x,t,W)
+  subroutine exactSineSquaredWave(t)
     use realsizes, only: dp
+    use inputParams, only: rhom, um, pm, wm
     use numbers, only: PI
     use Euler1D_WState
     implicit none
-    real(dp),              intent(in)  :: x
-    real(dp),              intent(in)  :: t
-    type(Euler1D_W_State), intent(out) :: W
-    !Set the primitive solution state
-    W%rho = 1.225_dp ; W%u = 100.0_dp ; W%p = 101325.0_dp
-    !Update the density based on the location and time
-    if(6.0_dp*x.le.1.0_dp + 6.0_dp*W%u*t) then
-    else if(x.le.0.5_dp + W%u*t) then
-      W%rho = W%rho*(1.0_dp + (sin(0.5*PI*(6.0_dp*(x-W%u*t)-1.0_dp))**2))
+    !Argument variables:
+    real(dp), intent(in)  :: t
+    !Local variables:
+    integer               :: n
+    real(dp)              :: xl, xr
+    type(Euler1D_W_State) :: Wo
+    !Initialize the wave states
+    Wo%rho = rhom ; Wo%u = um ; Wo%p = pm
+    !Get wave limit locations:
+    xl = 0.0_dp - 0.5_dp*wm + t*um
+    xr = 0.0_dp + 0.5_dp*wm + t*um
+    if(um.gt.0.0_dp) then
+      do while(xl.gt.0.5_dp)
+        xl = xl - 1.0_dp
+      end do
+      do while(xr.gt.0.5_dp)
+        xr = xr - 1.0_dp
+      end do
+    else
+      do while(xl.lt.-0.5_dp)
+        xl = xl + 1.0_dp
+      end do
+      do while(xr.lt.-0.5_dp)
+        xr = xr + 1.0_dp
+      end do
+    end if
+    ne = 53
+    allocate(Xe(ne))
+    allocate(We(ne))
+    do n = 1, ne
+      Xe(n)%xc = 0.0_dp ; Xe(n)%dx = 0.0_dp
+      Xe(n)%xa = 0.0_dp ; Xe(n)%da = 0.0_dp
+      call Vacuum_W(We(n))
+    end do
+    !Calculate the primitive solution state based on the location and time
+    if(xl.lt.xr) then
+      Xe( 1)%xc = -0.5_dp ; We( 1) = Wo
+      do n = 2, 52
+        We(n) = Wo
+        Xe(n)%xc = xl + (n-2)*(xr-xl)/50
+        We(n)%rho = Wo%rho*(1.0_dp + 0.5_dp*(cos(PI*(-0.5_dp + (n-2.0_dp)/50.0_dp))**2))
+      end do
+      Xe(53)%xc =  0.5_dp ; We(53) = Wo
     else
     end if
     return
   end subroutine exactSineSquaredWave
-
-  !---------------------------------------------------------------------
-  !Semi-Ellipse Density Wave
-  !---------------------------------------------------------------------
-  subroutine exactSemiEllipseWave(x,t,W)
-    use realsizes, only: dp
-    use Euler1D_WState
-    implicit none
-    real(dp),              intent(in)  :: x
-    real(dp),              intent(in)  :: t
-    type(Euler1D_W_State), intent(out) :: W
-    !Set the primitive solution state.
-    W%rho = 1.225_dp ; W%u = 100.0_dp ; W%p = 101325.0_dp
-    !Update the density based on the location and time
-    if(6.0_dp*x.le.1.0_dp + 6.0_dp*W%u*t) then
-    else if(x.le.0.5_dp + W%u*t) then
-      W%rho = W%rho*(1.0_dp + sqrt(1.0_dp-(6.0_dp*(x-W%u*t)-2.0_dp)**2))
-    else
-    end if
-    return
-  end subroutine exactSemiEllipseWave
-
 
 end module exactSoln_module

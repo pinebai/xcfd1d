@@ -55,6 +55,7 @@ module inputParams
 contains
 
   !---------------------------------------------------------------------
+  ! Set input parameter default values
   !---------------------------------------------------------------------
   subroutine inputDefaults
     use cfdParams
@@ -101,8 +102,8 @@ contains
     return
   end subroutine inputDefaults
 
-
   !---------------------------------------------------------------------
+  ! Read in input parameters from namelists
   !---------------------------------------------------------------------
   subroutine inputNamelists
     use gasConstants, only: setGas
@@ -126,8 +127,8 @@ contains
     return
   end subroutine inputNamelists
 
-
   !---------------------------------------------------------------------
+  ! Check that input parameters are consistent and error free
   !---------------------------------------------------------------------
   subroutine inputConsistency(ierr)
     use Numbers, only: TOLER
@@ -137,7 +138,7 @@ contains
     integer, intent(out) :: ierr
     ierr = 0
 
-    if(i_problem.lt.SOD_PROBLEM.or.i_problem.gt.SEMI_ELLIPSE_WAVE) then
+    if(i_problem.lt.SOD_PROBLEM.or.i_problem.gt.SINE_SQUARED_WAVE) then
       write(6,"(a)") "    - Initial condition type specified incorrectly."
       ierr = ierr + 1
     end if
@@ -202,8 +203,8 @@ contains
     return
   end subroutine inputConsistency
 
-
   !---------------------------------------------------------------------
+  ! Write the input parameters to standard output
   !---------------------------------------------------------------------
   subroutine inputWrite
     use cfdParams
@@ -228,8 +229,6 @@ contains
       write(6,"(a)") "    - Square density wave"
     else if(i_problem.eq.SINE_SQUARED_WAVE) then
       write(6,"(a)") "    - Sine squared density wave"
-    else if(i_problem.eq.SEMI_ELLIPSE_WAVE) then
-      write(6,"(a)") "    - Semi ellipse density wave"
     end if
     if(i_explicit.eq.EXPLICIT_EULER) then
       write(6,"(a)") "    - Explicit Euler"
@@ -294,6 +293,5 @@ contains
 
     return
   end subroutine inputWrite
-
 
 end module inputParams

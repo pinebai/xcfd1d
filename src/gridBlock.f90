@@ -89,7 +89,7 @@ contains
     integer :: n
     i_grid = GRID_SHOCK_TUBE
     if((i_problem.eq.SUBSONIC_NOZZLE).or.(i_problem.eq.TRANSONIC_NOZZLE)) i_grid = GRID_NOZZLE
-    if((i_problem.ge.SQUARE_WAVE).and.(i_problem.le.SEMI_ELLIPSE_WAVE)) i_grid = GRID_WAVE_PROBLEM
+    if((i_problem.ge.SQUARE_WAVE).and.(i_problem.le.SINE_SQUARED_WAVE)) i_grid = GRID_WAVE_PROBLEM
     Grid%Ng  = num_ghost
     Grid%NC  = num_cells + 2*Grid%Ng
     Grid%NN  = Grid%NC + 1

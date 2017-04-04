@@ -1,5 +1,70 @@
 !---------------------------------------------------------------------
 !---------------------------------------------------------------------
+subroutine python_output
+  use cfdParams
+  use solnBlock_module
+  use gridBlock_module
+  use exactSoln_module
+  implicit none
+  integer :: n, nvar
+  !Open the input file.
+  open(unit=8,file='output.dat',status='REPLACE')
+  !Create the output file header:
+  nvar = 11
+  if(i_grid.eq.GRID_NOZZLE) nvar = 12
+  write(8,*) nvar
+  write(8,*) 'Position, x, [m]'
+  if(i_grid.eq.GRID_NOZZLE) write(8,*) 'Area, xA, [m2]'
+  write(8,*) 'Density, rho, [kg/m3]'
+  write(8,*) 'Speed, u, [m/s]'
+  write(8,*) 'Pressure, p, [Pa]'
+  write(8,*) 'Temperature, T, [K]'
+  write(8,*) 'Sound speed, a, [m/s]'
+  write(8,*) 'Mach number, M, [-]'
+  write(8,*) 'Internal Energy, eps, [J/kg]'
+  write(8,*) 'Total Energy, E, [J]'
+  write(8,*) 'Total Enthalpy, H, [J]'
+  write(8,*) 'Entropy, s, [J/kg]'
+  !Output the exact solution if available:
+  write(8,*) ne
+  do n = 1, ne
+    write(8,'(es20.12,$)') Xe(n)%xc
+    if(i_grid.eq.GRID_NOZZLE) write(8,'(es20.12,$)') Xe(n)%xa
+    write(8,'(es20.12,$)') We(n)%rho
+    write(8,'(es20.12,$)') We(n)%u
+    write(8,'(es20.12,$)') We(n)%p
+    write(8,'(es20.12,$)') T_W(We(n))
+    write(8,'(es20.12,$)') a_W(We(n))
+    write(8,'(es20.12,$)') M_W(We(n))
+    write(8,'(es20.12,$)') Esp_W(We(n))
+    write(8,'(es20.12,$)') E_W(We(n))
+    write(8,'(es20.12,$)') H_W(We(n))
+    write(8,'(es20.12)') s_W(We(n))
+  end do
+  !Output the solution data:
+  write(8,*) NCu - NCl + 1
+  do n = NCl, NCu
+    write(8,'(es20.12,$)') Cell(n)%xc
+    if(i_grid.eq.GRID_NOZZLE) write(8,'(es20.12,$)') Cell(n)%xa
+    write(8,'(es20.12,$)') W(n)%rho
+    write(8,'(es20.12,$)') W(n)%u
+    write(8,'(es20.12,$)') W(n)%p
+    write(8,'(es20.12,$)') T_W(W(n))
+    write(8,'(es20.12,$)') a_W(W(n))
+    write(8,'(es20.12,$)') M_W(W(n))
+    write(8,'(es20.12,$)') Esp_W(W(n))
+    write(8,'(es20.12,$)') E_W(W(n))
+    write(8,'(es20.12,$)') H_W(W(n))
+    write(8,'(es20.12)') s_W(W(n))
+  end do
+  !Close the output file.
+  close(8)
+  return
+end subroutine python_output
+
+
+!---------------------------------------------------------------------
+!---------------------------------------------------------------------
 subroutine eps_output
   use realSizes, only: dp
   use solnBlock_module
@@ -11,9 +76,11 @@ subroutine eps_output
   implicit none
   integer :: m, n, np
   real(dp), dimension(Nc-2*Ng) :: var
+  real(dp), dimension(ne) :: loce
   real(dp), dimension(ne) :: vare
   np = Nc-2*Ng
   do m = 1, nplots
+    loce(1:ne) = Xe(1:ne)%xc
     if(yvar(m).eq.PLOT_DENSITY) then
       var(1:np) = W(NCl:NCu)%rho
       vare(1:ne) = We(1:ne)%rho
@@ -50,72 +117,75 @@ subroutine eps_output
     call profile_plot(Xf(m), Yf(m), Xo(m), Yo(m), Xa(m), Ya(m), &
          xmin(m), xmax(m), dx(m), xdim(m), &
          ymin(m), ymax(m), dy(m), ydim(m), xsig(m), ysig(m), &
-         yvar(m), np, Cell(NCl:NCu)%Xc, var, ne, xe, vare)
+         yvar(m), np, Cell(NCl:NCu)%xc, var, ne, loce, vare)
   end do
 end subroutine eps_output
 
 !---------------------------------------------------------------------
 !---------------------------------------------------------------------
 subroutine tecplot_output
+  use cfdParams
   use solnBlock_module
   use gridBlock_module
   use exactSoln_module
+  implicit none
   integer :: n
   !Open the input file.
-  open(unit=7,file='output_tecplot.dat',status='REPLACE')
+  open(unit=8,file='output_tecplot.dat',status='REPLACE')
   !Create the output file header:
-  write(7,*) 'TITLE = "xCFD1D Solution"'
-  write(7,*) 'VARIABLES = "x" \\'
-  write(7,*) '"rho" \\'
-  write(7,*) '"u" \\'
-  write(7,*) '"p" \\'
-  write(7,*) '"T" \\'
-  write(7,*) '"a" \\'
-  write(7,*) '"M" \\'
-  write(7,*) '"eps" \\'
-  write(7,*) '"E" \\'
-  write(7,*) '"H" \\'
-  write(7,*) '"s" \\'
+  write(8,*) 'TITLE = "xCFD1D Solution"'
+  write(8,*) 'VARIABLES = "x" \\'
+  if(i_grid.eq.GRID_NOZZLE) write(8,*) '"xA" \\'
+  write(8,*) '"rho" \\'
+  write(8,*) '"u" \\'
+  write(8,*) '"p" \\'
+  write(8,*) '"T" \\'
+  write(8,*) '"a" \\'
+  write(8,*) '"M" \\'
+  write(8,*) '"eps" \\'
+  write(8,*) '"E" \\'
+  write(8,*) '"H" \\'
+  write(8,*) '"s" \\'
   !Output the exact solution if available:
   if(ne.gt.0) then
-    write(7,*) 'ZONE T = "Exact Solution" \\'
-    write(7,*) 'I = ', ne, ' \\'
-    write(7,*) 'F = POINT'
+    write(8,*) 'ZONE T = "Exact Solution" \\'
+    write(8,*) 'I = ', ne, ' \\'
+    write(8,*) 'F = POINT'
     do n = 1, ne
-      write(7,('(11(ES14.6))')) &
-           xe(n),  &
-           We(n)%rho,    &
-           We(n)%u,      &
-           We(n)%p,      &
-           T_W(We(n)),   &
-           a_W(We(n)),   &
-           M_W(We(n)),   &
-           Esp_W(We(n)), &
-           E_W(We(n)),   &
-           H_W(We(n)),   &
-           s_W(We(n))
+      write(8,'(es20.12,$)') Xe(n)%xc
+      if(i_grid.eq.GRID_NOZZLE) write(8,'(es20.12,$)') Xe(n)%xa
+      write(8,'(es20.12,$)') We(n)%rho
+      write(8,'(es20.12,$)') We(n)%u
+      write(8,'(es20.12,$)') We(n)%p
+      write(8,'(es20.12,$)') T_W(We(n))
+      write(8,'(es20.12,$)') a_W(We(n))
+      write(8,'(es20.12,$)') M_W(We(n))
+      write(8,'(es20.12,$)') Esp_W(We(n))
+      write(8,'(es20.12,$)') E_W(We(n))
+      write(8,'(es20.12,$)') H_W(We(n))
+      write(8,'(es20.12)') s_W(We(n))
     end do
   end if
   !Output the solution data:
-  write(7,*) 'ZONE T = "xCFD1D Solution" \\'
-  write(7,*) 'I = ', NCu - NCl + 1, ' \\'
-  write(7,*) 'F = POINT'
+  write(8,*) 'ZONE T = "xCFD1D Solution" \\'
+  write(8,*) 'I = ', NCu - NCl + 1, ' \\'
+  write(8,*) 'F = POINT'
   do n = NCl, NCu
-    write(7,('(11(ES14.6))')) &
-         Cell(n)%Xc,  &
-         W(n)%rho,    &
-         W(n)%u,      &
-         W(n)%p,      &
-         T_W(W(n)),   &
-         a_W(W(n)),   &
-         M_W(W(n)),   &
-         Esp_W(W(n)), &
-         E_W(W(n)),   &
-         H_W(W(n)),   &
-         s_W(W(n))
+    write(8,'(es20.12,$)') Cell(n)%xc
+    if(i_grid.eq.GRID_NOZZLE) write(8,'(es20.12,$)') Cell(n)%xa
+    write(8,'(es20.12,$)') W(n)%rho
+    write(8,'(es20.12,$)') W(n)%u
+    write(8,'(es20.12,$)') W(n)%p
+    write(8,'(es20.12,$)') T_W(W(n))
+    write(8,'(es20.12,$)') a_W(W(n))
+    write(8,'(es20.12,$)') M_W(W(n))
+    write(8,'(es20.12,$)') Esp_W(W(n))
+    write(8,'(es20.12,$)') E_W(W(n))
+    write(8,'(es20.12,$)') H_W(W(n))
+    write(8,'(es20.12)') s_W(W(n))
   end do
   !Close the input file.
-  close(7)
+  close(8)
   return
 end subroutine tecplot_output
 
@@ -131,20 +201,20 @@ subroutine tecplot_residual
   type(Euler1D_U_State) :: l1, l2, mx
   character(len=255) :: buffer
   !Open the input file.
-  open(unit=7,file='residual_tecplot.dat',status='REPLACE')
+  open(unit=8,file='residual_tecplot.dat',status='REPLACE')
   !Create the output file header:
-  write(7,*) 'TITLE = "xCFD1D Residual"'
-  write(7,*) 'VARIABLES = "n" \\'
-  write(7,*) '"t" \\'
-  write(7,*) '"l1-rho" \\'
-  write(7,*) '"l1-du" \\'
-  write(7,*) '"l1-E" \\'
-  write(7,*) '"l2-rho" \\'
-  write(7,*) '"l2-du" \\'
-  write(7,*) '"l2-E" \\'
-  write(7,*) '"mx-rho" \\'
-  write(7,*) '"mx-du" \\'
-  write(7,*) '"mx-E" \\'
+  write(8,*) 'TITLE = "xCFD1D Residual"'
+  write(8,*) 'VARIABLES = "n" \\'
+  write(8,*) '"t" \\'
+  write(8,*) '"l1-rho" \\'
+  write(8,*) '"l1-du" \\'
+  write(8,*) '"l1-E" \\'
+  write(8,*) '"l2-rho" \\'
+  write(8,*) '"l2-du" \\'
+  write(8,*) '"l2-E" \\'
+  write(8,*) '"mx-rho" \\'
+  write(8,*) '"mx-du" \\'
+  write(8,*) '"mx-E" \\'
   open(unit=4,file='residual.dat',status='old',action='read',position='rewind')
   read(4,'(a)') buffer !Header line
   ierr = 0
@@ -153,170 +223,65 @@ subroutine tecplot_residual
     read(4,'(a)',iostat=ierr) buffer
     if(ierr.eq.0) npts = npts + 1
   end do
-  write(7,*) 'ZONE T = "xCFD1D Residual" \\'
-  write(7,*) 'I = ', npts, ' \\'
-  write(7,*) 'F = POINT'
+  write(8,*) 'ZONE T = "xCFD1D Residual" \\'
+  write(8,*) 'I = ', npts, ' \\'
+  write(8,*) 'F = POINT'
   rewind(4)
   read(4,'(a)') buffer !Header line
   do n = 1, npts
-    read(4,('(a5,10(a11))')) ns, t, l1%rho, l1%du, l1%E, l2%rho, l2%du, l2%E, mx%rho, mx%du, mx%E
-    write(7,('(a5,10(a11))')) ns, t, l1%rho, l1%du, l1%E, l2%rho, l2%du, l2%E, mx%rho, mx%du, mx%E
+    read(4,'(a5,10(es11.4))') ns, t, l1%rho, l1%du, l1%E, l2%rho, l2%du, l2%E, mx%rho, mx%du, mx%E
+    write(8,'(a5,10(es11.4))') ns, t, l1%rho, l1%du, l1%E, l2%rho, l2%du, l2%E, mx%rho, mx%du, mx%E
   end do
   !Close the input file.
   close(4)
-  close(7)
+  close(8)
   return
 end subroutine tecplot_residual
-
 
 !---------------------------------------------------------------------
 !---------------------------------------------------------------------
 subroutine gnuplot_output
+  use cfdParams
   use solnBlock_module
   use gridBlock_module
   use exactSoln_module
+  implicit none
   integer :: n
   !Write the exact solution file if available:
   if(ne.gt.0) then
-    open(unit=7,file='exact_gnuplot.dat',status='REPLACE')
+    open(unit=8,file='exact_gnuplot.dat',status='REPLACE')
     do n = 1, ne
-      write(7,('(11(ES14.6))')) &
-           xe(n),  &
-           We(n)%rho,    &
-           We(n)%u,      &
-           We(n)%p,      &
-           T_W(We(n)),   &
-           a_W(We(n)),   &
-           M_W(We(n)),   &
-           Esp_W(We(n)), &
-           E_W(We(n)),   &
-           H_W(We(n)),   &
-           s_W(We(n))
+      write(8,'(es20.12,$)') Xe(n)%xc
+      if(i_grid.eq.GRID_NOZZLE) write(8,'(es20.12,$)') Xe(n)%xa
+      write(8,'(es20.12,$)') We(n)%rho
+      write(8,'(es20.12,$)') We(n)%u
+      write(8,'(es20.12,$)') We(n)%p
+      write(8,'(es20.12,$)') T_W(We(n))
+      write(8,'(es20.12,$)') a_W(We(n))
+      write(8,'(es20.12,$)') M_W(We(n))
+      write(8,'(es20.12,$)') Esp_W(We(n))
+      write(8,'(es20.12,$)') E_W(We(n))
+      write(8,'(es20.12,$)') H_W(We(n))
+      write(8,'(es20.12)') s_W(We(n))
     end do
-    close(7)
+    close(8)
   end if
   !Write the current solution to the data file.
-  open(unit=7,file='output_gnuplot.dat',status='REPLACE')
+  open(unit=8,file='output_gnuplot.dat',status='REPLACE')
   do n = NCl, NCu
-    write(7,('(11(ES14.6))')) &
-         Cell(n)%Xc,  &
-         W(n)%rho,    &
-         W(n)%u,      &
-         W(n)%p,      &
-         T_W(W(n)),   &
-         a_W(W(n)),   &
-         M_W(W(n)),   &
-         Esp_W(W(n)), &
-         E_W(W(n)),   &
-         H_W(W(n)),   &
-         s_W(W(n))
+    write(8,'(es20.12,$)') Cell(n)%xc
+    if(i_grid.eq.GRID_NOZZLE) write(8,'(es20.12,$)') Cell(n)%xa
+    write(8,'(es20.12,$)') W(n)%rho
+    write(8,'(es20.12,$)') W(n)%u
+    write(8,'(es20.12,$)') W(n)%p
+    write(8,'(es20.12,$)') T_W(W(n))
+    write(8,'(es20.12,$)') a_W(W(n))
+    write(8,'(es20.12,$)') M_W(W(n))
+    write(8,'(es20.12,$)') Esp_W(W(n))
+    write(8,'(es20.12,$)') E_W(W(n))
+    write(8,'(es20.12,$)') H_W(W(n))
+    write(8,'(es20.12)') s_W(W(n))
   end do
-  close(7)
-  !Create the gnuplot file for the density.
-  open(UNIT=7,FILE='density.gplt',STATUS='REPLACE')
-  write(7,'(a)') 'set xlabel "x"'
-  write(7,'(a)') 'set ylabel "density"'
-  write(7,'(a)') 'set grid'
-  if(ne.gt.0) then
-    write(7,'(a)') 'plot "exact_gnuplot.dat" using 1:2 title "exact" with lines, \'
-    write(7,'(a)') '     "output_gnuplot.dat" using 1:2 title "cfd" with lines'
-  else
-    write(7,'(a)') 'plot "output_gnuplot.dat" using 1:2 title "" with lines'
-  end if
-  write(7,'(a)') 'pause -1  "Hit return to continue"'
-  close(7)
-  !Create the gnuplot file for the speed.
-  open(UNIT=7,FILE='speed.gplt',STATUS='REPLACE')
-  write(7,'(a)') 'set xlabel "x"'
-  write(7,'(a)') 'set ylabel "speed"'
-  write(7,'(a)') 'set grid'
-  if(ne.gt.0) then
-    write(7,'(a)') 'plot "exact_gnuplot.dat" using 1:3 title "exact" with lines, \'
-    write(7,'(a)') '     "output_gnuplot.dat" using 1:3 title "cfd" with lines'
-  else
-    write(7,'(a)') 'plot "output_gnuplot.dat" using 1:3 title "" with lines'
-  end if
-  write(7,'(a)') 'pause -1  "Hit return to continue"'
-  close(7)
-  !Create the gnuplot file for the pressure.
-  open(UNIT=7,FILE='pressure.gplt',STATUS='REPLACE')
-  write(7,'(a)') 'set xlabel "x"'
-  write(7,'(a)') 'set ylabel "pressure"'
-  write(7,'(a)') 'set grid'
-  if(ne.gt.0) then
-    write(7,'(a)') 'plot "exact_gnuplot.dat" using 1:4 title "exact" with lines, \'
-    write(7,'(a)') '     "output_gnuplot.dat" using 1:4 title "cfd" with lines'
-  else
-    write(7,'(a)') 'plot "output_gnuplot.dat" using 1:4 title "" with lines'
-  end if
-  write(7,'(a)') 'pause -1  "Hit return to continue"'
-  close(7)
-  !Create the gnuplot file for the temperature.
-  open(UNIT=7,FILE='temperature.gplt',STATUS='REPLACE')
-  write(7,'(a)') 'set xlabel "x"'
-  write(7,'(a)') 'set ylabel "temperature"'
-  write(7,'(a)') 'set grid'
-  if(ne.gt.0) then
-    write(7,'(a)') 'plot "exact_gnuplot.dat" using 1:5 title "exact" with lines, \'
-    write(7,'(a)') '     "output_gnuplot.dat" using 1:5 title "cfd" with lines'
-  else
-    write(7,'(a)') 'plot "output_gnuplot.dat" using 1:5 title "" with lines'
-  end if
-  write(7,'(a)') 'pause -1  "Hit return to continue"'
-  close(7)
-  !Create the gnuplot file for the Mach number.
-  open(UNIT=7,FILE='mach.gplt',STATUS='REPLACE')
-  write(7,'(a)') 'set xlabel "x"'
-  write(7,'(a)') 'set ylabel "Mach Number"'
-  write(7,'(a)') 'set grid'
-  if(ne.gt.0) then
-    write(7,'(a)') 'plot "exact_gnuplot.dat" using 1:7 title "exact" with lines, \'
-    write(7,'(a)') '     "output_gnuplot.dat" using 1:7 title "cfd" with lines'
-  else
-    write(7,'(a)') 'plot "output_gnuplot.dat" using 1:7 title "" with lines'
-  end if
-  write(7,'(a)') 'pause -1  "Hit return to continue"'
-  close(7)
+  close(8)
   return
 end subroutine gnuplot_output
-
-
-!---------------------------------------------------------------------
-!---------------------------------------------------------------------
-subroutine gnuplot_residual
-  integer :: n
-  !Create the gnuplot file for the l1-norm of the residual.
-  open(UNIT=7,FILE='l1resid.gplt',STATUS='REPLACE')
-  write(7,'(a)') 'set xlabel "n"'
-  write(7,'(a)') 'set ylabel "l1-norm"'
-  write(7,'(a)') 'set logscale y'
-  write(7,'(a)') 'set grid'
-  write(7,'(a)') 'plot "residual.dat" using 1:3 title "rho" with lines, \'
-  write(7,'(a)') '     "residual.dat" using 1:4 title "du" with lines, \'
-  write(7,'(a)') '     "residual.dat" using 1:5 title "E" with lines'
-  write(7,'(a)') 'pause -1  "Hit return to continue"'
-  close(7)
-  !Create the gnuplot file for the l2-norm of the residual.
-  open(UNIT=7,FILE='l1resid.gplt',STATUS='REPLACE')
-  write(7,'(a)') 'set xlabel "n"'
-  write(7,'(a)') 'set ylabel "l2-norm"'
-  write(7,'(a)') 'set logscale y'
-  write(7,'(a)') 'set grid'
-  write(7,'(a)') 'plot "residual.dat" using 1:6 title "rho" with lines, \'
-  write(7,'(a)') '     "residual.dat" using 1:7 title "du" with lines, \'
-  write(7,'(a)') '     "residual.dat" using 1:8 title "E" with lines'
-  write(7,'(a)') 'pause -1  "Hit return to continue"'
-  close(7)
-  !Create the gnuplot file for the maxnorm of the residual.
-  open(UNIT=7,FILE='l1resid.gplt',STATUS='REPLACE')
-  write(7,'(a)') 'set xlabel "n"'
-  write(7,'(a)') 'set ylabel "maxnorm"'
-  write(7,'(a)') 'set logscale y'
-  write(7,'(a)') 'set grid'
-  write(7,'(a)') 'plot "residual.dat" using 1:9 title "rho" with lines, \'
-  write(7,'(a)') '     "residual.dat" using 1:10 title "du" with lines, \'
-  write(7,'(a)') '     "residual.dat" using 1:11 title "E" with lines'
-  write(7,'(a)') 'pause -1  "Hit return to continue"'
-  close(7)
-  return
-end subroutine gnuplot_residual

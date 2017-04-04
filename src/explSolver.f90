@@ -1,24 +1,22 @@
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
 module explSolver
-  !Include real sizes module.
   use realSizes, only: dp
-  !Include the conserved-variable solution state.
   use Euler1D_UState
 
-  !Implicit declaration.
   implicit none
 
   !Solution block variable declaration.
-  type(Euler1D_U_State), dimension(:),   allocatable :: Uo   !Array of conserved variables.
-  type(Euler1D_U_State), dimension(:,:), allocatable :: dUdt !Array of solution residuals.
-  real(dp),              dimension(:),   allocatable :: dt   !Array of local time-steps.
+  type(Euler1D_U_State), dimension(:),   allocatable :: Uo   !Array of conserved variables
+  type(Euler1D_U_State), dimension(:,:), allocatable :: dUdt !Array of solution residuals
+  real(dp),              dimension(:),   allocatable :: dt   !Array of local time-steps
 
 contains
 
   !---------------------------------------------------------------------
   !---------------------------------------------------------------------
   real(dp) function RKcoef(i_stage, n_stage) result(beta)
+    use realSizes, only: dp
     implicit none
     integer, intent(in) :: i_stage
     integer, intent(in) :: n_stage
@@ -114,6 +112,7 @@ contains
   !---------------------------------------------------------------------
   !---------------------------------------------------------------------
   subroutine solnExplicit_allocate
+    use realSizes, only: dp
     use inputParams, only: max_time_steps
     use solnBlock_module, only: NCl, NCu, Ng, Nc
     implicit none
@@ -126,7 +125,7 @@ contains
       do m = 1, 3
         call vacuum_U(dUdt(n,m))
       end do
-      dt(nc) = 0.0_dp
+      dt(n) = 0.0_dp
     end do
     return
   end subroutine solnExplicit_allocate
@@ -144,7 +143,8 @@ contains
   !---------------------------------------------------------------------
   !---------------------------------------------------------------------
   subroutine setTimeStep(dt_global,cfl_number)
-    use Numbers, only: MEGA
+    use realSizes, only: dp
+    use numbers, only: MEGA
     use gridBlock_module, only: Cell
     use solnBlock_module, only: NCl, NCu, Ng, W
     use Euler1D_WState
@@ -167,21 +167,27 @@ contains
   !---------------------------------------------------------------------
   !---------------------------------------------------------------------
   subroutine setGlobalTimeStep(dt_global)
-    use solnBlock_module, only: NC
+    use realSizes, only: dp
+    use solnBlock_module, only: NCl, NCu, Ng
     implicit none
     real(dp), intent(in) :: dt_global
-    dt(1:NC) = dt_global
+    integer :: n
+    do n = NCl-Ng, NCu+Ng
+      dt(n) = dt_global
+    end do
     return
   end subroutine setGlobalTimeStep
 
   !---------------------------------------------------------------------
   !---------------------------------------------------------------------
   subroutine residual_l1_norm(l1norm)
+    use realSizes, only: dp
     use solnBlock_module, only: NCl, NCu
     use Euler1D_UState
     implicit none
     type(Euler1D_U_State), intent(out) :: l1norm
     integer :: n
+    call vacuum_U(l1norm)
     do n = NCl, NCu
       l1norm%rho = l1norm%rho + abs(dUdt(n,1)%rho)
       l1norm%du  = l1norm%du  + abs(dUdt(n,1)%du)
@@ -193,11 +199,13 @@ contains
   !---------------------------------------------------------------------
   !---------------------------------------------------------------------
   subroutine residual_l2_norm(l2norm)
+    use realSizes, only: dp
     use solnBlock_module, only: NCl, NCu
     use Euler1D_UState
     implicit none
     type(Euler1D_U_State), intent(out) :: l2norm
     integer :: n
+    call vacuum_U(l2norm)
     do n = NCl, NCu
       l2norm%rho = l2norm%rho + (dUdt(n,1)%rho)**2
       l2norm%du  = l2norm%du  + (dUdt(n,1)%du)**2
@@ -212,11 +220,13 @@ contains
   !---------------------------------------------------------------------
   !---------------------------------------------------------------------
   subroutine residual_max_norm(maxnorm)
+    use realSizes, only: dp
     use solnBlock_module, only: NCl, NCu
     use Euler1D_UState
     implicit none
     type(Euler1D_U_State), intent(out) :: maxnorm
     integer :: n
+    call vacuum_U(maxnorm)
     do n = NCl, NCu
       maxnorm%rho = max(maxnorm%rho,abs(dUdt(n,1)%rho))
       maxnorm%du  = max(maxnorm%du,abs(dUdt(n,1)%du))
@@ -264,7 +274,7 @@ contains
     use Euler1D_WState
     use Euler1D_UState
     use gridBlock_module, only: Cell, xfaceL, xfaceR
-    use solnBlock_module, only: NCl, NCu, Ng, W, U, phi, dWdx, BCl, BCr
+    use solnBlock_module, only: NCl, NCu, Ng, W, U, phi, dWdx, BCl, BCr, WoL, WoR
     implicit none
     !Argument variables:
     integer, intent(in)   :: i_stage
@@ -340,23 +350,33 @@ contains
         end select
       end if
 
-      if(n.eq.NCl-1) then
+      if((n.eq.NCl-1).and.(BCl.ne.BC_PERIODIC)) then
         dx = xfaceL(n+1) - Cell(n+1)%Xc
         Wr = W(n+1) + dx*(phi(n+1)*dWdx(n+1))
-        if(BCl.eq.BC_CONSTANT_EXTRAPOLATION) then
+        select case(BCl)
+        case(BC_FIXED)
+          Wl = WoL
+        case(BC_CONSTANT_EXTRAPOLATION)
           Wl = Wr
-        else
+        case(BC_CHARACTERISTIC)
+          !call characteristic_W(Wl,Wr)
+        case(BC_REFLECTION)
           call Reflect_W(Wl,Wr)
-        end if
+        end select
         
-      else if(n.eq.NCu) then
+      else if((n.eq.NCu).and.(BCr.ne.BC_PERIODIC)) then
         dx = xfaceR(n) - Cell(n)%Xc
         Wl = W(n) + dx*(phi(n)*dWdx(n))
-        if(BCr.eq.BC_CONSTANT_EXTRAPOLATION) then
+        select case(BCr)
+        case(BC_FIXED)
+          Wr = WoR
+        case(BC_CONSTANT_EXTRAPOLATION)
           Wr = Wl
-        else
+        case(BC_CHARACTERISTIC)
+          !call characteristic_W(Wr,Wl)
+        case(BC_REFLECTION)
           call Reflect_W(Wr,Wl)
-        end if
+        end select
 
       else
         dx = xfaceR(n) - Cell(n)%Xc
