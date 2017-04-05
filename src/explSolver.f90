@@ -360,6 +360,7 @@ contains
           Wl = Wr
         case(BC_CHARACTERISTIC)
           !call characteristic_W(Wl,Wr)
+          
         case(BC_REFLECTION)
           call Reflect_W(Wl,Wr)
         end select

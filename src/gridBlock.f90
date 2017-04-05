@@ -276,7 +276,7 @@ contains
       end do
     case(GRID_NOZZLE)
       do nc = 1, Grid%NC
-        if(Cell(nc)%Xc.lt.5.) THEN
+        if(Cell(nc)%Xc.lt.5.0_dp) then
           Cell(nc)%xA = 1.0_dp + 1.5_dp*(1.0_dp - Cell(nc)%Xc/5.0_dp)**2
           Cell(nc)%dA =        - 0.6_dp*(1.0_dp - Cell(nc)%Xc/5.0_dp)
         else

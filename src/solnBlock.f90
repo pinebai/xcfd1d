@@ -169,10 +169,10 @@ contains
         else
           W(nc) = Wr
         end if
-        !call Nozzle(Cell(nc)%Xc,Cell(nc)%Xa,IC_SUBSONIC_NOZZLE,We(nc))
       end do
       BCl = BC_FIXED
       BCr = BC_CONSTANT_EXTRAPOLATION
+      call exactNozzle
     case(TRANSONIC_NOZZLE)
       Wl = WState(1.1288_dp,82.693_dp,96085.0_dp)
       Wr = WState(1.0261_dp,151.62_dp,84974.0_dp)
@@ -182,10 +182,10 @@ contains
         else
           W(nc) = Wr
         end if
-        !call Nozzle(Cell(nc)%Xc,Cell(nc)%Xa,IC_TRANSONIC_NOZZLE,We(nc))
       end do
       BCl = BC_FIXED
       BCr = BC_CONSTANT_EXTRAPOLATION
+      call exactNozzle
     case(SQUARE_WAVE)
       Wl%rho = 1.0_dp*rhom ; Wl%u = um ; Wl%p = pm
       Wr%rho = 2.0_dp*rhom ; Wr%u = um ; Wr%p = pm
@@ -214,6 +214,8 @@ contains
     do n = NCl-Ng, NCu+Ng
       call transform_W_to_U(W(n),U(n))
     end do
+    WoL = W(NCl)
+    WoR = W(NCu)
     return
   end subroutine applyICs
 

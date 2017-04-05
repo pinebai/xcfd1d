@@ -237,7 +237,7 @@ contains
     else if(i_explicit.eq.RUNGE_KUTTA) then
       write(6,"(a)") "    - Runge-Kutta"
     else if(i_explicit.eq.MULTISTAGE_OPTIMAL_SMOOTHING) then
-      write(6,"(a)") "    - Multistage Optimal Smoothing"
+      write(6,"(a)") "    - Multistage optimal smoothing"
     end if
     if(i_flux.eq.FLUX_GODUNOV) then
       write(6,"(a)") "    - Fluxes calculated using the exact Riemann solution"

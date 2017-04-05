@@ -1,64 +1,40 @@
 #----------------------------------------+
-#  EULER1D::TRANSONIC NOZZLE PROBLEM     |
-#                                        |
+# TRANSONIC NOZZLE PROBLEM               |
 #----------------------------------------+
-#
-# INITIAL CONDIITIONS:
-Initial_Conditions =
-Transonic_Nozzle
-Fluid_Type =
-Air
-#
+
+# PROBLEM PARAMETERS:
+&problem
+ i_problem = 8 
+ num_cells = 100
+ num_ghost = 2
+ i_gas_type = 0
+/
+
 # TEMPORAL DISCRETIZATION:
-Time_Integration_Type =
-Explicit_Runge_Kutta
-#Multistage_Optimal_Smoothing
-N_Stage =
-2
-Time_Accurate =
-Off
-Local_Time_Stepping =
-Global
-#Scalar
-CFL_Number =
-0.5
-Time_Max =
-0.0
-Max_Time_Steps =
-5000
-#
+&temporal
+ i_explicit = 2
+ n_stage = 4
+ cfl_number = 0.5
+ i_time_step = 1
+ time_max = 0.0
+ max_time_steps = 0
+ i_output_freq = 10
+/
+
 # SPATIAL DISCRETIZATION:
-Flux_Function =
-Roe
-Limiter =
-Barth_Jespersen
-#Venkatakrishnan
-Reconstruction_Type =
-Linear_Least_Squares
-#
-# GRID PARAMETERS:
-Grid_Type =
-Nozzle
-Number_of_Cells =
-100
-Number_of_Ghost_Cells =
-2
-Xl =
-0.0
-Xr =
-10.0
-BCl =
-Fixed
-#Constant_Extrapolation
-BCr =
-Constant_Extrapolation
-#
-# EXECUTE PROGRAM:
-Execute
-#
-# WRITE OUTPUT:
-Write_Output
-Write_Output_Cells
-#
-# TERMINATE CODE:
-Terminate
+&spatial
+ i_flux = 4
+ i_limiter = 10
+ i_recon = 1
+/
+
+# OUTPUT FORMATS:
+&output
+ plot_tecplot = false
+ plot_gnuplot = false
+ plot_eps     = false
+ plot_python  = true
+/
+
+&eps_plots
+/

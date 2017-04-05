@@ -1,110 +1,40 @@
 #----------------------------------------+
-#  SUBSONIC NOZZLE PROBLEM      |
+# SUBSONIC NOZZLE PROBLEM                |
 #----------------------------------------+
 
-# DOMAIN PARAMETERS:
-&domain
+# PROBLEM PARAMETERS:
+&problem
+ i_problem = 7
  num_cells = 100
  num_ghost = 2
- i_grid = 1
- xl = 0.0
- xr = 10.0
- BCleft = 3
- BCright = 3
+ i_gas_type = 0
 /
 
-
-#
-# INITIAL CONDITIONS:
-Initial_Conditions =
-Subsonic_Nozzle
-Fluid_Type =
-Air
-#
 # TEMPORAL DISCRETIZATION:
-Time_Integration_Type =
-Multistage_Optimal_Smoothing
-N_Stage =
-3
-Time_Accurate =
-Off
-Local_Time_Stepping =
-Scalar
-#Global
-CFL_Number =
-0.25
-#Number_of_Residual_Smoothing_Iterations =
-#0
-#Residual_Smoothing_Epsilon =
-#0.175
-Time_Max =
-0.05
-Max_Time_Steps =
-0
-#
-# MULTIGRID PARAMETERS:
-Multigrid_Levels =
-4
-Multigrid_Cycle =
-V_Cycle
-Ncycles_Full_Multigrid =
-0
-Ncycles_Regular_Multigrid =
-1
-Defect_Correction =
-On
-First_Order_Coarse_Mesh_Reconstruction =
-On
-Apply_BCS_On_Coarse_Mesh =
-On
-Prolong_Using_Injection =
-On
-Number_of_Smooths_on_Finest_Level =
-1
-Number_of_Pre_Smooths =
-1
-Number_of_Post_Smooths =
-1
-Number_of_Smooths_on_Coarsest_Level =
-1
-#
+&temporal
+ i_explicit = 3
+ n_stage = 3
+ cfl_number = 0.5
+ i_time_step = 1
+ time_max = 0.0
+ max_time_steps = 10000
+ i_output_freq = 10
+/
+
 # SPATIAL DISCRETIZATION:
-Flux_Function =
-Roe
-Limiter =
-Venkatakrishnan
-#Zero
-#Barth_Jespersen
-Reconstruction_Type =
-Linear_Least_Squares
-#
-# GRID PARAMETERS:
-Grid_Type =
-Nozzle
-Number_of_Cells =
-128
-Number_of_Ghost_Cells =
-2
-Xl =
-0.0
-Xr =
-10.0
-BCl =
-Fixed
-#Characteristic
-#Constant_Extrapolation
-BCr =
-Fixed
-#Characteristic
-#Constant_Extrapolation
-#
-# EXECUTE PROGRAM:
-Execute
-#
-# WRITE OUTPUT:
-Write_Output
-Write_Output_Cells
-Write_Output_Nozzle
-#
-# TERMINATE CODE:
-Terminate
+&spatial
+ i_flux = 4
+ i_limiter = 10
+ i_recon = 1
+/
+
+# OUTPUT FORMATS:
+&output
+ plot_tecplot = false
+ plot_gnuplot = false
+ plot_eps     = false
+ plot_python  = true
+/
+
+&eps_plots
+/

@@ -18,10 +18,10 @@ contains
     return
   end subroutine exactSoln_deallocate
 
-  !----------------------------------------------------------------------
-  !Sod Problem: (x,t)     = (0.50,0.25), x in [0,1]
-  !             (d,u,p)_l = (1.000,0,1.0)
-  !             (d,u,p)_r = (0.125,0,0.1)
+  !---------------------------------------------------------------------
+  ! Sod Problem: (x,t)       = (0.50,0.25), x in [0,1]
+  !              (rho,u,p)_l = (1.000,0,1.0)
+  !              (rho,u,p)_r = (0.125,0,0.1)
   !---------------------------------------------------------------------
   subroutine exactSod(t)
     use realsizes, only: dp
@@ -98,10 +98,9 @@ contains
   end subroutine exactSod
 
   !-------------------------------------------------------------------
-  !Modified Sod Problem
-  !(x,t) = (0.30,0.20), x in [0,1]
-  !Wl = Euler1D_pState(1.000,0.75,1.0)
-  !Wr = Euler1D_pState(0.125,0.00,0.1)
+  ! Modified Sod Problem: (x,t)       = (0.30,0.20), x in [0,1]
+  !                       (rho,u,p)_l = (1.000,0.75,1.0)
+  !                       (rho,u,p)_l = (0.125,0.00,0.1)
   !-------------------------------------------------------------------
   subroutine exactModifiedSod(t)
     use realsizes, only: dp
@@ -180,10 +179,9 @@ contains
   end subroutine exactModifiedSod
 
   !-------------------------------------------------------------------
-  !123 Problem
-  !(x,t) = (0.5,0.15), x in [0,1]
-  !Wl = Euler1D_pState(1.0,-2.0,0.4)
-  !Wr = Euler1D_pState(1.0, 2.0,0.4)
+  ! 123 Problem: (x,t)       = (0.5,0.15), x in [0,1]
+  !              (rho,u,p)_l = (1.0,-2.0,0.4)
+  !              (rho,u,p)_r = (1.0, 2.0,0.4)
   !-------------------------------------------------------------------
   subroutine Exact123Problem(t)
     use realsizes, only: dp
@@ -257,10 +255,9 @@ contains
   end subroutine exact123Problem
 
   !-------------------------------------------------------------------
-  !Left Rarefaction, Right Shock Problem
-  !(x,t) = (0.5,0.012), x in [0,1]
-  !Wl = Euler1D_pState(1.0,0.0,0.01)
-  !Wr = Euler1D_pState(1.0,0.0,1000.0)
+  ! Strong Sod: (x,t) = (0.5,0.012), x in [0,1]
+  !             (rho,u,p)_l = (1.0,0.0,0.01)
+  !             (rho,u,p)_r = (1.0,0.0,1000.0)
   !-------------------------------------------------------------------
   subroutine exactStrongSod(t)
     use realsizes, only: dp
@@ -337,10 +334,9 @@ contains
   end subroutine exactStrongSod
 
   !---------------------------------------------------------------------
-  !Stationary Contact (w/ left rarefaction and right shock)
-  !(x,t) = (0.8,0.012), x in [0,1]
-  !Wl = Euler1D_pState(1.0,-19.59745,1000.0)
-  !Wr = Euler1D_pState(1.0,-19.59745,0.01)
+  ! Stationary Contact: (x,t)       = (0.80,0.012), x in [0,1]
+  !                     (rho,u,p)_l = (1.0,-19.59745,1000.0)
+  !                     (rho,u,p)_r = (1.0,-19.59745,0.01)
   !---------------------------------------------------------------------
   subroutine exactStationaryContact(t)
     use realsizes, only: dp
@@ -417,10 +413,9 @@ contains
   end subroutine exactStationaryContact
 
   !---------------------------------------------------------------------
-  !Three Right Discontinuities Problem
-  !(x,t) = (0.4,0.035), x in [0,1]
-  !Wl = Euler1D_pState(5.99924,19.59750,460.894)
-  !Wr = Euler1D_pState(5.99242,-6.19633, 46.095)
+  ! Three Right Waves: (x,t)       = (0.4,0.035), x in [0,1]
+  !                    (rho,u,p)_l = (5.99924,19.59750,460.894)
+  !                    (rho,u,p)_r = (5.99242,-6.19633, 46.095)
   !---------------------------------------------------------------------
   subroutine exact3RightWaves(t)
     use realsizes, only: dp
@@ -493,11 +488,10 @@ contains
   end subroutine exact3RightWaves
 
   !---------------------------------------------------------------------
-  !Subsonic or Transonic Nozzle
-  !Subsonic: (Sthroat,xShock) = (0.8,11.0)
-  !Transonic: (Sthroat,xShock) = (1.0,7.0)
+  ! Nozzle Problems:  Subsonic  - (Sthroat,xShock) = (0.8,11.0)
+  !                   Transonic - (Sthroat,xShock) = (1.0,7.0)
   !---------------------------------------------------------------------
-  recursive subroutine Nozzle(t)
+  recursive subroutine exactNozzle
     use realsizes, only: dp
     use numbers, only: TOLER
     use inputParams, only: i_problem
@@ -505,69 +499,83 @@ contains
     use gasConstants, only: g, gm1, gp1, gm1i, gp1i, R, alpha, alphai, betai
     use Euler1D_WState
     implicit none
-    !Argument variables:
-    real(dp), intent(in)  :: t
-    !Local variables:
-    real(dp)              :: xs, Ms !Location and Mach number at sonic point
+    integer               :: n, m
+    real(dp)              :: xs, Ms !Sonic point location and Mach number
     type(Euler1D_W_State) :: Ws     !Sonic point state variables
     real(dp)              :: To, po, Mo
-    real(dp)              :: f, fp, Sstar
+    real(dp)              :: f, fp
+    real(dp)              :: S, Sstar
+    real(dp)              :: Ma, T, a
     real(dp)              :: Mr, pr
-!!$    !Allocate exact solution arrays:
-!!$    if(IC.eq.IC_SUBSONIC_NOZZLE) then
-!!$      ne = 101
-!!$      Mo = 0.1_dp
-!!$      To = 300.0_dp
-!!$      po = 100000.0_dp
-!!$      Sstar = 0.8_dp
-!!$      xs = 11.0_dp
-!!$    else
-!!$      ne = 102
-!!$      Sstar = 1.0_dp
-!!$      xs = 7.0_dp
-!!$    end if
-!!$    allocate(Xe(ne))
-!!$    allocate(We(ne))
-!!$    !Set constants:
-!!$    Mo = 0.1_dp
-!!$    To = 300.0_dp
-!!$    po = 100000.0_dp
-!!$    do n = 1, ne
-!!$      xe(n) = 0.0_dp + 10.0_dp*(n-1.0_dp)/(ne-1.0_dp)
-!!$      S = 1.0_dp + 0.5_dp*(1.0_dp - xe(n)/5.0_dp)**2
-!!$      if(IC.eq.IC_TRANSONIC_NOZZLE) then
-!!$        Mo = 0.1_dp
-!!$        To = 300.0_dp
-!!$        po = 100000.0_dp
-!!$        if((x.gt.5.0_dp).and.(x.le.xs)) then
-!!$          M = 1.2_dp
-!!$        else if(x.gt.xs) then
-!!$          M = 0.1_dp
-!!$          call Nozzle(xs,1.0_dp+0.5_dp*((1.0_dp-xs/5.0_dp)**2),IC,Wl)
-!!$          Ml = M_W(Wl)
-!!$          Mr = sqrt((2.0_dp + gm1*sqr(Ml))/(2.0_dp*g*sqr(Ml)-gm1))
-!!$          pr = Wl%p*(2.0_dp*g*sqr(Ml)-gm1)/gp1
-!!$          po = po*(((gp1*sqr(Ml))/(2.0_dp+gm1*sqr(Ml)))**(g*gm1i))/ &
-!!$                  ((alphai*(betai*sqr(Ml)-1.0_dp))**gm1i)
-!!$          po = pr + 0.5_dp*sqr(Mr)*g*pr
-!!$        end if
-!!$      end if
-!!$      !Iterate to find actual M.
-!!$      do
-!!$        f  = (S/Sstar)*M - ((2.0_dp*gp1i*(1.0_dp + 0.5_dp*gm1*sqr(M)))**(alpha/2.0_dp))
-!!$        fp = (S/Sstar) - M*((2.0_dp*gp1i*(1.0_dp + 0.5_dp*gm1*sqr(M)))**((alpha/2.0_dp) - 1.0_dp))
-!!$        M = M - f/fp
-!!$        if(abs(f).le.TOLER) exit
-!!$      end do
-!!$      !Compute the state variables.
-!!$      T         = To/(1.0_dp + 0.5_dp*gm1*sqr(M))
-!!$      a         = sqrt(g*R*T)
-!!$      We(n)%u   = M*a
-!!$      We(n)%p   = po*((T/To)**(g*gm1i))
-!!$      We(n)%rho = W%p/(R*T)
-!!$    end do
+    !Allocate exact solution arrays:
+    if(i_problem.eq.SUBSONIC_NOZZLE) then
+      ne = 101
+      Sstar = 0.8_dp
+      xs = 11.0_dp
+    else
+      ne = 102
+      Sstar = 1.0_dp
+      xs = 7.0_dp
+    end if
+    allocate(Xe(ne))
+    allocate(We(ne))
+    !Set grid for exact solution:
+    n = 1; m = 1
+    do while(n.le.ne)
+      Xe(n)%xc = 0.0_dp + 0.1_dp*(m-1.0_dp)
+      if(Xe(n)%xc.lt.5.0_dp) then
+        Xe(n)%xA = 1.0_dp + 1.5_dp*(1.0_dp - Xe(n)%xc/5.0_dp)**2
+        Xe(n)%dA =        - 0.6_dp*(1.0_dp - Xe(n)%xc/5.0_dp)
+      else
+        Xe(n)%xA = 1.0_dp + 0.5_dp*(1.0_dp - Xe(n)%xc/5.0_dp)**2
+        Xe(n)%dA =        - 0.2_dp*(1.0_dp - Xe(n)%xc/5.0_dp)
+      end if
+      n = n + 1
+      m = m + 1
+      if((n.eq.72).and.(i_problem.eq.TRANSONIC_NOZZLE)) then
+        Xe(n) = Xe(n-1)
+        n = n + 1
+      end if
+    end do
+    do n = 1, ne
+      S = Xe(n)%xa
+      Ma = 0.1_dp
+      Mo = 0.1_dp
+      To = 300.0_dp
+      po = 100000.0_dp
+      if(i_problem.eq.TRANSONIC_NOZZLE) then
+        if((n.ge.51).and.(n.le.71)) then
+          Ma = 1.2_dp
+        else if(n.ge.72) then
+          Mr = sqrt((2.0_dp + gm1*(Ms*Ms))/(2.0_dp*g*(Ms*Ms)-gm1))
+          pr = Ws%p*(2.0_dp*g*(Ms*Ms)-gm1)/gp1
+          po = po*(((gp1*(Ms*Ms))/(2.0_dp+gm1*(Ms*Ms)))**(g*gm1i))/ &
+                   ((alphai*(betai*(Ms*Ms)-1.0_dp))**gm1i)
+          po = pr + 0.5_dp*(Mr*Mr)*g*pr
+        end if
+      end if
+      !Iterate to find actual M.
+      m = 1
+      do
+        f  = (S/Sstar)*Ma - ((2.0_dp*gp1i*(1.0_dp + 0.5_dp*gm1*Ma*Ma))**(alpha/2.0_dp))
+        fp = (S/Sstar) - Ma*((2.0_dp*gp1i*(1.0_dp + 0.5_dp*gm1*Ma*Ma))**((alpha/2.0_dp) - 1.0_dp))
+        Ma = Ma - f/fp
+        if(abs(f).le.TOLER) exit
+        m = m + 1
+      end do
+      !Compute the state variables.
+      T         = To/(1.0_dp + 0.5_dp*gm1*(Ma*Ma))
+      a         = sqrt(g*R*T)
+      We(n)%u   = Ma*a
+      We(n)%p   = po*((T/To)**(g*gm1i))
+      We(n)%rho = We(n)%p/(R*T)
+      if((i_problem.eq.TRANSONIC_NOZZLE).and.(n.eq.71)) then
+        Ms = Ma
+        Ws = We(n)
+      end if
+    end do
     return
-  end subroutine Nozzle
+  end subroutine exactNozzle
 
   !---------------------------------------------------------------------
   !Square Density Wave
