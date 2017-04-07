@@ -505,7 +505,7 @@ contains
     real(dp)              :: To, po, Mo
     real(dp)              :: f, fp
     real(dp)              :: S, Sstar
-    real(dp)              :: Ma, T, a
+    real(dp)              :: T
     real(dp)              :: Mr, pr
     !Allocate exact solution arrays:
     if(i_problem.eq.SUBSONIC_NOZZLE) then
@@ -537,42 +537,43 @@ contains
         n = n + 1
       end if
     end do
-    do n = 1, ne
+    Mo = 0.1_dp
+    To = 300.0_dp
+    po = 100000.0_dp
+    n = 1
+    do while(n.le.ne)
       S = Xe(n)%xa
-      Ma = 0.1_dp
-      Mo = 0.1_dp
-      To = 300.0_dp
-      po = 100000.0_dp
       if(i_problem.eq.TRANSONIC_NOZZLE) then
-        if((n.ge.51).and.(n.le.71)) then
-          Ma = 1.2_dp
-        else if(n.ge.72) then
-          Mr = sqrt((2.0_dp + gm1*(Ms*Ms))/(2.0_dp*g*(Ms*Ms)-gm1))
-          pr = Ws%p*(2.0_dp*g*(Ms*Ms)-gm1)/gp1
-          po = po*(((gp1*(Ms*Ms))/(2.0_dp+gm1*(Ms*Ms)))**(g*gm1i))/ &
-                   ((alphai*(betai*(Ms*Ms)-1.0_dp))**gm1i)
-          po = pr + 0.5_dp*(Mr*Mr)*g*pr
-        end if
+        if(n.eq.51) Mo = 1.2_dp !at throat
+        if(Mo.ge.1.0_dp) Mo = 1.2_dp
+      else
+        Mo = 0.1_dp
       end if
       !Iterate to find actual M.
-      m = 1
       do
-        f  = (S/Sstar)*Ma - ((2.0_dp*gp1i*(1.0_dp + 0.5_dp*gm1*Ma*Ma))**(alpha/2.0_dp))
-        fp = (S/Sstar) - Ma*((2.0_dp*gp1i*(1.0_dp + 0.5_dp*gm1*Ma*Ma))**((alpha/2.0_dp) - 1.0_dp))
-        Ma = Ma - f/fp
+        f  = (S/Sstar)*Mo - ((2.0_dp*gp1i*(1.0_dp + 0.5_dp*gm1*Mo*Mo))**(alpha/2.0_dp))
+        fp = (S/Sstar) - Mo*((2.0_dp*gp1i*(1.0_dp + 0.5_dp*gm1*Mo*Mo))**((alpha/2.0_dp) - 1.0_dp))
+        Mo = Mo - f/fp
         if(abs(f).le.TOLER) exit
-        m = m + 1
       end do
       !Compute the state variables.
-      T         = To/(1.0_dp + 0.5_dp*gm1*(Ma*Ma))
-      a         = sqrt(g*R*T)
-      We(n)%u   = Ma*a
+      T         = To/(1.0_dp + 0.5_dp*gm1*Mo*Mo)
+      We(n)%u   = Mo*sqrt(g*R*T)
       We(n)%p   = po*((T/To)**(g*gm1i))
       We(n)%rho = We(n)%p/(R*T)
       if((i_problem.eq.TRANSONIC_NOZZLE).and.(n.eq.71)) then
-        Ms = Ma
-        Ws = We(n)
+        n = n + 1
+        Ms = sqrt((2.0_dp + gm1*(Mo*Mo))/(2.0_dp*g*Mo*Mo-gm1))
+        po = po*(((gp1*Mo*Mo)/(2.0_dp+gm1*Mo*Mo))**(g*gm1i))/ &
+             ((alphai*(betai*Mo*Mo-1.0_dp))**gm1i)
+        T         = To/(1.0_dp + 0.5_dp*gm1*Ms*Ms)
+        We(n)%p   = po*((T/To)**(g*gm1i))
+        We(n)%u   = Ms*sqrt(g*R*T)
+        We(n)%rho = We(n)%p/(R*T)
+        Mo = Ms
+        Sstar = S*Mo*(((2.0_dp/gp1)*(To/T))**(-0.5_dp*alpha))
       end if
+      n = n + 1
     end do
     return
   end subroutine exactNozzle
