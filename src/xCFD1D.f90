@@ -15,22 +15,24 @@ program xcfd1d
   use gridBlock_module
   use exactSoln_module
 
-  !Implicit declaration.
   implicit none
 
   !Local variables:
-  integer               :: ierr = 0  !Error flag
+  integer               :: ierr      !Error flag
   integer               :: i_stage   !Explicit time-stepping stage number
   integer               :: n_steps   !Number of time-steps
   real(dp)              :: dtime     !Global time-step
   real(dp)              :: time      !Total time
-  type(Euler1D_U_State) :: l1norm
-  type(Euler1D_U_State) :: l2norm
-  type(Euler1D_U_State) :: maxnorm
+  type(Euler1D_U_State) :: l1norm    !L1-residual norm
+  type(Euler1D_U_State) :: l2norm    !L2-residual norm
+  type(Euler1D_U_State) :: maxnorm   !Max-residual norm
 
+  ierr = 0
+  
   write(6,"(a)") '----------------------------------------------------------------------'
   write(6,"(a)") ' xCFD1D SOLVER FOR THE 1D EULER EQUATIONS'
   write(6,"(a)") '----------------------------------------------------------------------'
+
   write(6,"(a)") ' Reading input parameters:'
 
   write(6,"(a)") ' -> Setting defaults'
@@ -78,55 +80,55 @@ program xcfd1d
   !Perform required number of iterations (time steps).
   time_marching: do
 
-   !Consider exit criteria.
-   if(i_time_step.eq.GLOBAL_TIME_STEP.and.time.ge.time_max) exit
-   if(i_time_step.eq.LOCAL_TIME_STEP.and.n_steps.ge.max_time_steps) exit
+    !Consider exit criteria.
+    if(i_time_step.eq.GLOBAL_TIME_STEP.and.time.ge.time_max) exit
+    if(i_time_step.eq.LOCAL_TIME_STEP.and.n_steps.ge.max_time_steps) exit
 
-   !Determine local and global time steps.
-   call setTimeStep(dtime, cfl_number)
-   if(i_time_step.eq.GLOBAL_TIME_STEP) then
-     if(time + dtime.gt.time_max) then
-       dtime = time_max-time
-     end if
-     call setGlobalTimeStep(dtime)
-   end if
+    !Determine local and global time steps.
+    call setTimeStep(dtime, cfl_number)
+    if(i_time_step.eq.GLOBAL_TIME_STEP) then
+      if(time + dtime.gt.time_max) then
+        dtime = time_max-time
+      end if
+      call setGlobalTimeStep(dtime)
+    end if
 
-   !Update solution for next time step using a multistage time-stepping scheme.
-   do i_stage = 1, n_stage
+    !Update solution for next time step using a multistage time-stepping scheme.
+    do i_stage = 1, n_stage
+     
+      !Apply boundary conditions for stage.
+      call applyBCs
 
-    !Apply boundary conditions for stage.
-    call applyBCs
+      !Compute residual for this stage.
+      call multistageExplicit(i_stage, ierr)
+      if(ierr.ne.0) call exit(3)
 
-    !Compute residual for this stage.
-    call multistageExplicit(i_stage, ierr)
-    if(ierr.ne.0) call exit(3)
+      !Update solution for this stage.
+      call updateExplicit(i_stage, ierr)
+      if(ierr.ne.0) call exit(4)
 
-    !Update solution for this stage.
-    call updateExplicit(i_stage, ierr)
-    if(ierr.ne.0) call exit(4)
+    end do
 
-   end do
+    !Update time and time step counter.
+    n_steps = n_steps + 1
+    time = time + dtime
 
-   !Update time and time step counter.
-   n_steps = n_steps + 1
-   time = time + dtime
+    !Determine the L1, L2, and max norms of the solution residual.
+    call residual_l1_norm(l1norm)
+    call residual_l2_norm(l2norm)
+    call residual_max_norm(maxnorm)
+    call write_residual_file(n_steps,time,l1norm,l2norm,maxnorm)
 
-   !Determine the L1, L2, and max norms of the solution residual.
-   call residual_l1_norm(l1norm)
-   call residual_l2_norm(l2norm)
-   call residual_max_norm(maxnorm)
-   call write_residual_file(n_steps,time,l1norm,l2norm,maxnorm)
-
-   !Output progress information for the calculation.
-   if(n_steps-i_output_freq*(n_steps/i_output_freq).eq.0) then
-     if(n_steps.lt.1000) then
-       write(6,100) n_steps, time, l2norm%rho, l2norm%du, l2norm%E
-     else if(n_steps.lt.10000) then
-       write(6,101) n_steps, time, l2norm%rho, l2norm%du, l2norm%E
-     else
-       write(6,102) n_steps, time, l2norm%rho, l2norm%du, l2norm%E
-     end if
-   end if
+    !Output progress information for the calculation.
+    if(n_steps-i_output_freq*(n_steps/i_output_freq).eq.0) then
+      if(n_steps.lt.1000) then
+        write(6,100) n_steps, time, l2norm%rho, l2norm%du, l2norm%E
+      else if(n_steps.lt.10000) then
+        write(6,101) n_steps, time, l2norm%rho, l2norm%du, l2norm%E
+      else
+        write(6,102) n_steps, time, l2norm%rho, l2norm%du, l2norm%E
+      end if
+    end if
 100 format(' n = ',I3, ' t = ',F8.6,' l2_norm = ',E12.6,' ',E12.6,' ',E12.6)
 101 format(' n = ',I4, ' t = ',F8.6,' l2_norm = ',E12.6,' ',E12.6,' ',E12.6)
 102 format(' n = ',I5, ' t = ',F8.6,' l2_norm = ',E12.6,' ',E12.6,' ',E12.6)
