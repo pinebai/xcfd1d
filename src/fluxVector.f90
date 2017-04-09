@@ -42,7 +42,7 @@ subroutine roe_average(Wl, Wr, Wa)
   implicit none
   type(Euler1D_W_State), intent(in)  :: Wl, Wr
   type(Euler1D_W_State), intent(out) :: Wa
-  real(dp)                     :: hl, hr, srhol, srhor, ha
+  real(dp)                           :: hl, hr, srhol, srhor, ha
   !Determine the left and right state specific enthalpies and square
   !roots of the density.
   hl = Hsp_W(Wl)
@@ -174,13 +174,13 @@ subroutine Riemann(Wl,Wr,Wls,Wrs,W,istate)
   implicit none
   type(Euler1D_W_State), intent(in)  :: Wl, Wr
   type(Euler1D_W_State), intent(out) :: Wls, Wrs, W
-  integer, intent(in)                :: istate
-  integer        :: n_iterations
+  integer,               intent(in)  :: istate
+  integer  :: n_iterations
   real(dp) :: al, ar, CL, CR, Z
   real(dp) :: dml, dmr, vm, pm, aml, amr
   real(dp) :: msl, pml, dpmldum, msr, pmr, dpmrdum
   real(dp) :: vsl, vhl, vtl, vsr, vhr, vtr
-  logical        :: soln_found
+  logical  :: soln_found
 
   !Determine the left and right state sound speeds.
   al = a_W(Wl)
@@ -395,7 +395,7 @@ subroutine IsentropicFlux(Wl, Wr, F)
   type(Euler1D_W_State), intent(in)  :: Wl, Wr
   type(Euler1D_U_State), intent(out) :: F
   type(Euler1D_W_State)              :: Wls, Wrs
-  real(dp)                     :: al, ar, H
+  real(dp)                           :: al, ar, H
   !Compute left and right state sound speeds quantities:
   al = a_W(Wl)
   ar = a_W(Wr)
@@ -438,7 +438,7 @@ subroutine Rusanov(Wl, Wr, F)
   type(Euler1D_W_State)              :: Wa
   type(Euler1D_W_State)              :: lambda_l, lambda_r, lambda_a, wavespeeds
   type(Euler1D_U_State)              :: dUrl, Fl, Fr
-  real(dp)                     :: lambda_max
+  real(dp)                           :: lambda_max
   !Evaluate the Roe-average primitive solution state:
   call roe_average(Wl,Wr,Wa)
   !Evaluate the jumps in the conserved solution states:
@@ -473,7 +473,7 @@ subroutine HLLE(Wl, Wr, F)
   type(Euler1D_U_State), intent(out) :: F
   type(Euler1D_W_State)              :: Wa, lambda_l, lambda_r, lambda_a
   type(Euler1D_U_State)              :: dUrl, Fl, Fr
-  real(dp)                     :: wavespeed_l, wavespeed_r
+  real(dp)                           :: wavespeed_l, wavespeed_r
   !Evaluate the Roe-average primitive solution state:
   call roe_average(Wl,Wr,Wa)
   !Evaluate the jumps in the conserved solution states:
@@ -514,8 +514,8 @@ subroutine HLLL(Wl, Wr, F)
   type(Euler1D_U_State), intent(out) :: F
   type(Euler1D_W_State)              :: Wa, lambda_l, lambda_r, lambda_a
   type(Euler1D_U_State)              :: dUrl, Fl, Fr, dFrl, dFwave
-  real(dp)                     :: wavespeed_l, wavespeed_r, wavespeed_m
-  real(dp)                     :: da, ca, dU, alph, alph2
+  real(dp)                           :: wavespeed_l, wavespeed_r, wavespeed_m
+  real(dp)                           :: da, ca, dU, alph, alph2
   !Evaluate the Roe-average primitive solution state:
   call roe_average(Wl,Wr,Wa)
   !Evaluate the left, right, and average state eigenvalues:
@@ -573,10 +573,10 @@ subroutine HLLC(Wl, Wr, F)
   type(Euler1D_W_State), intent(in)  :: Wl, Wr
   type(Euler1D_U_State), intent(out) :: F
   type(Euler1D_U_State)              :: Uls, Urs, dU
-  real(dp)                     :: al, ar, CL, CR, Z, ql, qr
-  real(dp)                     :: um, pm, als, ars
-  real(dp)                     :: wavespeed_l, wavespeed_m, wavespeed_r
-  real(dp)                     :: wavespeed_ratio
+  real(dp)                           :: al, ar, CL, CR, Z, ql, qr
+  real(dp)                           :: um, pm, als, ars
+  real(dp)                           :: wavespeed_l, wavespeed_m, wavespeed_r
+  real(dp)                           :: wavespeed_ratio
   !Determine an approximation of the intermediate state properties
   !using an isentropic approximation:
   al  = a_W(Wl)
@@ -648,7 +648,7 @@ subroutine Osher(Wl, Wr, F)
   type(Euler1D_U_State), intent(out) :: F
   type(Euler1D_W_State)              :: Wls, Wrs, Wlsp, Wrsp
   type(Euler1D_U_State)              :: Fl, Fr, Fls, Frs, Flsp, Frsp
-  real(dp)                     :: al, ar, H, als, ars, alsp, arsp
+  real(dp)                           :: al, ar, H, als, ars, alsp, arsp
   !Determine the sound speed of the left and right states:
   al = a_W(Wl)
   ar = a_W(Wr)
@@ -723,7 +723,7 @@ subroutine Roe(Wl, Wr, F)
   type(Euler1D_W_State)              :: Wa, lp, dWrl
   type(Euler1D_W_State)              :: lambda_l, lambda_r, lambda_a, wavespeeds
   type(Euler1D_U_State)              :: Fl, Fr, rc
-  real(dp)                     :: dU
+  real(dp)                           :: dU
   !Determine the average fluxes from the left and right states:
   call Flux_W(Wl,Fl)
   call Flux_W(Wr,Fr)
@@ -767,7 +767,7 @@ subroutine VanLeerFlux(Wl, Wr, F)
   type(Euler1D_W_State), intent(in)  :: Wl, Wr
   type(Euler1D_U_State), intent(out) :: F
   type(Euler1D_U_State)              :: Fl, Fr
-  real(dp)                     :: M, Mp, Mn, a, a2
+  real(dp)                           :: M, Mp, Mn, a, a2
   !Left flux:
   a2 = a2_W(Wl)
   a = sqrt(a2)
@@ -814,11 +814,11 @@ subroutine AUSMplus(Wl, Wr, F)
   implicit none
   type(Euler1D_W_State), intent(in)    :: Wl, Wr
   type(Euler1D_U_State), intent(inout) :: F
-  real(dp)                       :: beta = 0.125
-  real(dp)                       :: alpha = 0.1875
-  real(dp)                       :: Ml, Mr, Mplus, Mminus, Mhalf
-  real(dp)                       :: al, ar, ahalf, Hl, Hr, uhalf
-  real(dp)                       :: pplus, pminus, phalf
+  real(dp) :: beta = 0.125
+  real(dp) :: alpha = 0.1875
+  real(dp) :: Ml, Mr, Mplus, Mminus, Mhalf
+  real(dp) :: al, ar, ahalf, Hl, Hr, uhalf
+  real(dp) :: pplus, pminus, phalf
   !Compute required left and right state quantities:
   al = a_W(Wl)
   ar = a_W(Wr)
@@ -876,11 +876,11 @@ subroutine AUSMplusup(Wl, Wr, F)
   implicit none
   type(Euler1D_W_State), intent(in)    :: Wl, Wr
   type(Euler1D_U_State), intent(inout) :: F
-  real(dp)                       :: beta = 0.125
-  real(dp)                       :: alpha = 0.1875
-  real(dp)                       :: Ml, Mr, Mplus, Mminus, Mhalf
-  real(dp)                       :: al, ar, ahalf, Hl, Hr, uhalf
-  real(dp)                       :: pplus, pminus, phalf
+  real(dp) :: beta = 0.125
+  real(dp) :: alpha = 0.1875
+  real(dp) :: Ml, Mr, Mplus, Mminus, Mhalf
+  real(dp) :: al, ar, ahalf, Hl, Hr, uhalf
+  real(dp) :: pplus, pminus, phalf
   !Compute required left and right state quantities:
   al = a_W(Wl)
   ar = a_W(Wr)
