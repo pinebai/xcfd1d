@@ -359,10 +359,9 @@ contains
         case(BC_CONSTANT_EXTRAPOLATION)
           Wl = Wr
         case(BC_CHARACTERISTIC)
-          !call characteristic_W(Wl,Wr)
-          
+          call characteristic_W(Wl,Wr,WoL)
         case(BC_REFLECTION)
-          call Reflect_W(Wl,Wr)
+          call reflect_W(Wl,Wr)
         end select
         
       else if((n.eq.NCu).and.(BCr.ne.BC_PERIODIC)) then
@@ -374,9 +373,9 @@ contains
         case(BC_CONSTANT_EXTRAPOLATION)
           Wr = Wl
         case(BC_CHARACTERISTIC)
-          !call characteristic_W(Wr,Wl)
+          call characteristic_W(Wr,Wl,WoR)
         case(BC_REFLECTION)
-          call Reflect_W(Wr,Wl)
+          call reflect_W(Wr,Wl)
         end select
 
       else

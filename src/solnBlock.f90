@@ -170,8 +170,8 @@ contains
           W(nc) = Wr
         end if
       end do
-      BCl = BC_FIXED
-      BCr = BC_CONSTANT_EXTRAPOLATION
+      BCl = BC_CHARACTERISTIC
+      BCr = BC_CHARACTERISTIC
       call exactNozzle
     case(TRANSONIC_NOZZLE)
       Wl = WState(1.1288_dp,82.693_dp,96085.0_dp)
@@ -183,8 +183,8 @@ contains
           W(nc) = Wr
         end if
       end do
-      BCl = BC_FIXED
-      BCr = BC_CONSTANT_EXTRAPOLATION
+      BCl = BC_CHARACTERISTIC
+      BCr = BC_CHARACTERISTIC
       call exactNozzle
     case(SQUARE_WAVE)
       Wl%rho = 1.0_dp*rhom ; Wl%u = um ; Wl%p = pm

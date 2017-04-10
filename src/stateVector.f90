@@ -650,6 +650,7 @@ contains
     else
      ierr = 0
     end if
+    return
   end function unphysical_properties_W
 
   !Flux Vector
@@ -659,6 +660,7 @@ contains
     F%rho = W%rho*W%u
     F%du = W%rho*W%u*W%u + W%p
     F%E = W%u*H_W(W)
+    return
   end subroutine Flux_W
 
   !Flux Jacobian
@@ -677,6 +679,7 @@ contains
     dFdU(3,1) = gm1*W%u*W%u*W%u - g*W%u*E/W%rho
     dFdU(3,2) = g*E/W%rho - 0.5_dp*3.0_dp*gm1*W%u*W%u
     dFdU(3,3) = g*W%u
+    return
   end subroutine dFdU_W
 
   !Eigenvalue(s)
@@ -688,6 +691,7 @@ contains
     lambda%rho = W%u-a
     lambda%u = W%u
     lambda%p = W%u+a
+    return
   end subroutine lambda_W
 
   !Primitive right eigenvector
@@ -712,6 +716,7 @@ contains
      rp%u = a/W%rho
      rp%p = a2
     end select
+    return
   end subroutine rp_W
 
   !Primitive left eigenvector
@@ -736,6 +741,7 @@ contains
      lp%u = 0.5_dp*W%rho/a
      lp%p = 0.5_dp/a2
     end select
+    return
   end subroutine lp_W
 
   !Conserved right eigenvector
@@ -760,16 +766,29 @@ contains
      rc%du = W%u + a
      rc%E = h + a*W%u
     end select
+    return
   end subroutine rc_W
 
   !Reflection boundary condition
-  subroutine Reflect_W(W1, W2)
+  subroutine reflect_W(W1, W2)
     type(Euler1D_W_State), intent(out) :: W1
     type(Euler1D_W_State), intent(in)  :: W2
     W1%rho = W2%rho
     W1%u   = - W2%u
     W1%p   = W2%p
-  end subroutine Reflect_W
+    return
+  end subroutine reflect_W
+
+  !Characteristic boundary condition
+  subroutine characteristic_W(W1, W2, Wo)
+    type(Euler1D_W_State), intent(out) :: W1
+    type(Euler1D_W_State), intent(in)  :: W2
+    type(Euler1D_W_State), intent(in)  :: Wo
+    W1%rho = Wo%rho
+    W1%u   = W2%u
+    W1%p   = Wo%p
+    return
+  end subroutine characteristic_W
 
 end module Euler1D_WState
 

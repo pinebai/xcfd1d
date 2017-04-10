@@ -12,12 +12,12 @@
 
 # TEMPORAL DISCRETIZATION:
 &temporal
- i_explicit = 2
- n_stage = 4
- cfl_number = 0.5
+ i_explicit = 3
+ n_stage = 5
+ cfl_number = 0.25
  i_time_step = 1
  time_max = 0.0
- max_time_steps = 0
+ max_time_steps = 10000
  i_output_freq = 10
 /
 
