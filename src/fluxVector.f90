@@ -1,9 +1,9 @@
 !-----------------------------------------------------------------------
-!Subroutines for computing fluxes.
+!Subroutines for computing fluxes
 !-----------------------------------------------------------------------
 
 !---------------------------------------------------------------------
-!Transform a primitive (rho,u,p) state to a conserved variable state.
+!Transform a primitive (rho,u,p) state to a conserved variable state
 !---------------------------------------------------------------------
 subroutine transform_W_to_U(W, U)
   use Euler1D_UState
@@ -18,7 +18,7 @@ subroutine transform_W_to_U(W, U)
 end subroutine transform_W_to_U
 
 !---------------------------------------------------------------------
-!Transform a conserved variable state to a primitive (rho,u,p) state.
+!Transform a conserved variable state to a primitive (rho,u,p) state
 !---------------------------------------------------------------------
 subroutine transform_U_to_W(U, W)
   use Euler1D_UState
@@ -33,7 +33,7 @@ subroutine transform_U_to_W(U, W)
 end subroutine transform_U_to_W
 
 !---------------------------------------------------------------------
-!Determine the Roe-Average state from the two input primitive states.
+!Determine the Roe-Average state from the two input primitive states
 !---------------------------------------------------------------------
 subroutine roe_average(Wl, Wr, Wa)
   use realSizes, only: dp
@@ -44,22 +44,22 @@ subroutine roe_average(Wl, Wr, Wa)
   type(Euler1D_W_State), intent(out) :: Wa
   real(dp)                           :: hl, hr, srhol, srhor, ha
   !Determine the left and right state specific enthalpies and square
-  !roots of the density.
+  !roots of the density
   hl = Hsp_W(Wl)
   hr = Hsp_W(Wr)
   srhol = sqrt(Wl%rho)
   srhor = sqrt(Wr%rho)
-  !Determine the appropriate Roe averages.
+  !Determine the appropriate Roe averages
   Wa%rho = srhol*srhor
   Wa%u = (srhol*Wl%u + srhor*Wr%u)/(srhol+srhor)
   ha = (srhol*hl + srhor*hr)/(srhol+srhor)
-  Wa%p = Wa%rho*gm1*(ha - 0.5*Wa%u*Wa%u)/g
+  Wa%p = Wa%rho*gm1*(ha - 0.5_dp*Wa%u*Wa%u)/g
   return
 end subroutine roe_average
 
 !---------------------------------------------------------------------
 !Compute the positive parts of the corrected elemental wave speeds
-!(eigenvalues) according to Harten's entropy fix (1983).
+!(eigenvalues) according to Harten's entropy fix (1983)
 !---------------------------------------------------------------------
 subroutine HartenFixPos(lambda_a, lambda_l, lambda_r, lambda)
   use realSizes, only: dp
@@ -67,18 +67,18 @@ subroutine HartenFixPos(lambda_a, lambda_l, lambda_r, lambda)
   real(dp), intent(in)  :: lambda_a, lambda_l, lambda_r
   real(dp), intent(out) :: lambda
   real(dp)              :: delta
-  delta = max(0.,2.*(lambda_r-lambda_l))
-  if(abs(lambda_a).gt.delta.or.delta.lt.0.0000001) then
-    delta = 0.
+  delta = max(0.0_dp,2.0_dp*(lambda_r-lambda_l))
+  if(abs(lambda_a).gt.delta.or.delta.lt.1.0d-7) then
+    delta = 0.0_dp
   else
-    delta = 0.5*(delta + lambda_a*lambda_a/delta) - abs(lambda_a)
+    delta = 0.5_dp*(delta + lambda_a*lambda_a/delta) - abs(lambda_a)
   end if
-  lambda = 0.5*(lambda_a + abs(lambda_a) + delta)
+  lambda = 0.5_dp*(lambda_a + abs(lambda_a) + delta)
   return
 end subroutine HartenFixPos
 
 !---------------------------------------------------------------------
-!Compute the Harten positive-wave entropy fix.
+!Compute the Harten positive-wave entropy fix
 !---------------------------------------------------------------------
 subroutine harten_fix_pos(lambda_a, lambda_l, lambda_r, lambda)
   use Euler1D_WState
@@ -86,14 +86,14 @@ subroutine harten_fix_pos(lambda_a, lambda_l, lambda_r, lambda)
   type(Euler1D_W_State), intent(in)  :: lambda_a, lambda_l, lambda_r
   type(Euler1D_W_State), intent(out) :: lambda
   call HartenFixPos(lambda_a%rho,lambda_l%rho,lambda_r%rho,lambda%rho)
-  lambda%u = 0.5*(lambda_a%u+abs(lambda_a%u))
+  lambda%u = 0.5_dp*(lambda_a%u+abs(lambda_a%u))
   call HartenFixPos(lambda_a%p,lambda_l%p,lambda_r%p,lambda%p)
   return
 end subroutine harten_fix_pos
 
 !---------------------------------------------------------------------
 !Compute the negative parts of the corrected elemental wave speeds
-!(eigenvalues) according to Harten's entropy fix (1983).
+!(eigenvalues) according to Harten's entropy fix (1983)
 !---------------------------------------------------------------------
 subroutine HartenFixNeg(lambda_a, lambda_l, lambda_r, lambda)
   use realSizes, only: dp
@@ -101,18 +101,18 @@ subroutine HartenFixNeg(lambda_a, lambda_l, lambda_r, lambda)
   real(dp), intent(in)  :: lambda_a, lambda_l, lambda_r
   real(dp), intent(out) :: lambda
   real(dp)              :: delta
-  delta = max(0.,2.*(lambda_r-lambda_l))
-  if(abs(lambda_a).gt.delta.or.delta.lt.0.0000001) then
-    delta = 0.
+  delta = max(0.0_dp,2.0_dp*(lambda_r-lambda_l))
+  if(abs(lambda_a).gt.delta.or.delta.lt.1.0d-7) then
+    delta = 0.0_dp
   else
-    delta = 0.5*(delta + lambda_a*lambda_a/delta) - abs(lambda_a)
+    delta = 0.5_dp*(delta + lambda_a*lambda_a/delta) - abs(lambda_a)
   end if
   lambda = 0.5*(lambda_a - abs(lambda_a) - delta)
   return
 end subroutine HartenFixNeg
 
 !---------------------------------------------------------------------
-!Compute the Harten negative-wave entropy fix.
+!Compute the Harten negative-wave entropy fix
 !---------------------------------------------------------------------
 subroutine harten_fix_neg(lambda_a, lambda_l, lambda_r, lambda)
   use Euler1D_WState
@@ -120,14 +120,14 @@ subroutine harten_fix_neg(lambda_a, lambda_l, lambda_r, lambda)
   type(Euler1D_W_State), intent(in)  :: lambda_a, lambda_l, lambda_r
   type(Euler1D_W_State), intent(out) :: lambda
   call HartenFixNeg(lambda_a%rho,lambda_l%rho,lambda_r%rho,lambda%rho)
-  lambda%u = 0.5*(lambda_a%u-abs(lambda_a%u))
+  lambda%u = 0.5_dp*(lambda_a%u-abs(lambda_a%u))
   call HartenFixNeg(lambda_a%p,lambda_l%p,lambda_r%p,lambda%p)
   return
 end subroutine harten_fix_neg
 
 !---------------------------------------------------------------------
 !Compute the absolute values of the corrected elemental wave speeds
-!(eigenvalues) according to Harten's entropy fix (1983).
+!(eigenvalues) according to Harten's entropy fix (1983)
 !---------------------------------------------------------------------
 subroutine HartenFixAbs(lambda_a, lambda_l, lambda_r, lambda)
   use realSizes, only: dp
@@ -135,18 +135,18 @@ subroutine HartenFixAbs(lambda_a, lambda_l, lambda_r, lambda)
   real(dp), intent(in)  :: lambda_a, lambda_l, lambda_r
   real(dp), intent(out) :: lambda
   real(dp)              :: delta
-  delta = max(0.,2.*(lambda_r-lambda_l))
-  if(abs(lambda_a).gt.delta.or.delta.lt.0.0000001) then
-    delta = 0.
+  delta = max(0.0_dp,2.0_dp*(lambda_r-lambda_l))
+  if(abs(lambda_a).gt.delta.or.delta.lt.1.0d-7) then
+    delta = 0.0_dp
   else
-    delta = 0.5*(delta + lambda_a*lambda_a/delta) - abs(lambda_a)
+    delta = 0.5_dp*(delta + lambda_a*lambda_a/delta) - abs(lambda_a)
   end if
   lambda = abs(lambda_a) + delta
   return
 end subroutine HartenFixAbs
 
 !---------------------------------------------------------------------
-!Compute the Harten absolute entropy fix.
+!Compute the Harten absolute entropy fix
 !---------------------------------------------------------------------
 subroutine harten_fix_abs(lambda_a, lambda_l, lambda_r, lambda)
   use Euler1D_WState
@@ -182,16 +182,16 @@ subroutine Riemann(Wl,Wr,Wls,Wrs,W,istate)
   real(dp) :: vsl, vhl, vtl, vsr, vhr, vtr
   logical  :: soln_found
 
-  !Determine the left and right state sound speeds.
+  !Determine the left and right state sound speeds
   al = a_W(Wl)
   ar = a_W(Wr)
 
-  !Compute the left and right state Riemann invariants.
-  CL = Wl%u + 2.*gm1i*al
-  CR = Wr%u - 2.*gm1i*ar
+  !Compute the left and right state Riemann invariants
+  CL = Wl%u + 2.0_dp*gm1i*al
+  CR = Wr%u - 2.0_dp*gm1i*ar
 
-  !Check for vacuum state.
-  if(CL-CR.le.0.) then
+  !Check for vacuum state
+  if(CL-CR.le.0.0_dp) then
     call vacuum_W(Wls)
     call vacuum_W(Wrs)
     call vacuum_W(W)
@@ -210,18 +210,18 @@ subroutine Riemann(Wl,Wr,Wls,Wrs,W,istate)
   !required
   soln_found = .false.
   if((vm.ge.Wl%u).and.(vm.le.Wr%u)) then
-    if(vm.ge.0.) then
-      aml = al - 0.5*gm1*(vm - Wl%u)
+    if(vm.ge.0.0_dp) then
+      aml = al - 0.5_dp*gm1*(vm - Wl%u)
       pm = Wl%p*((aml/al)**betai)
       vhl = Wl%u - al
       vtl = vm - aml
-      if(vhl.ge.0.) then
+      if(vhl.ge.0.0_dp) then
         Wls = Wl
-      else if(vtl.le.0.) then
+      else if(vtl.le.0.0_dp) then
         dml = g*pm/sqr(aml)
         Wls = WState(dml,vm,pm)
       else
-        vm = (gm1*Wl%u + 2.*al)/gp1
+        vm = (gm1*Wl%u + 2.0_dp*al)/gp1
         pm = Wl%p*((vm/al)**beta)
         dml = g*pm/sqr(vm)
         Wls = WState(dml,vm,pm)
@@ -229,17 +229,17 @@ subroutine Riemann(Wl,Wr,Wls,Wrs,W,istate)
       Wrs = Wls
       soln_found = .true.
     else
-      amr = ar + 0.5*gm1*(vm - Wr%u)
+      amr = ar + 0.5_dp*gm1*(vm - Wr%u)
       pm = Wr%p*((amr/ar)**betai)
       vhr = Wr%u + ar
       vtr = vm + amr
-      if(vhr.le.0.) then
+      if(vhr.le.0.0_dp) then
         Wrs = Wr
-      else if(vtr.ge.0.) then
+      else if(vtr.ge.0.0_dp) then
         dmr = g*pm/sqr(amr)
         Wrs = WState(dmr,vm,pm)
       else
-        vm = (gm1*Wr%u - 2.*ar)/gp1
+        vm = (gm1*Wr%u - 2.0_dp*ar)/gp1
         pm = Wr%p*((-vm/ar)**betai)
         dmr = g*pm/sqr(vm)
         Wrs = WState(dmr,vm,pm)
@@ -256,43 +256,43 @@ subroutine Riemann(Wl,Wr,Wls,Wrs,W,istate)
 
     do n_iterations = 1, 1000
 
-      !Determine solution changes for left wave.
+      !Determine solution changes for left wave
       if(vm.lt.Wl%u) then
-        !Shock wave.
-        msl = 0.25*gp1*(vm - Wl%u)/al
+        !Shock wave
+        msl = 0.25_dp*gp1*(vm - Wl%u)/al
         msl = msl - sqrt(1.0_dp + sqr(msl))
         pml = Wl%p*(1.0_dp + g*(vm - Wl%u)*msl/al)
         dpmldum = 2.0_dp*g*Wl%p*cube(msl)/(al*(1.0_dp + sqr(msl)))
         aml = al*sqrt((gp1+gm1*pml/Wl%p)/(gp1+gm1*Wl%p/pml))
       else
-        !Rarefaction wave.
-        aml = al - 0.5*gm1*(vm - Wl%u)
+        !Rarefaction wave
+        aml = al - 0.5_dp*gm1*(vm - Wl%u)
         pml = Wl%p*((aml/al)**betai)
         dpmldum = -g*pml/aml
       end if
 
-      !Determine solution changes for right wave.
+      !Determine solution changes for right wave
       if(vm.gt.Wr%u) then
-        !Shock wave.
+        !Shock wave
         msr = 0.25_dp*gp1*(vm - Wr%u)/ar
         msr = msr + sqrt(1.0_dp + sqr(msr))
-        pmr = Wr%p*(1.+g*(vm - Wr%u)*msr/ar)
+        pmr = Wr%p*(1.0_dp+g*(vm - Wr%u)*msr/ar)
         dpmrdum = 2.0_dp*g*Wr%p*cube(msr)/(ar*(1.0_dp+sqr(msr)))
         amr = ar*sqrt((gp1+gm1*pmr/Wr%p)/(gp1+gm1*Wr%p/pmr))
       else
-        !Rarefaction wave.
+        !Rarefaction wave
         amr = ar + 0.5_dp*gm1*(vm - Wr%u)
         pmr = Wr%p*((amr/ar)**betai)
         dpmrdum = g*pmr/amr
       end if
 
-      !Check for convergence (i.e., pml=pmr).
-      if(abs(1.-pml/pmr).le.NANO) exit
+      !Check for convergence (i.e., pml=pmr)
+      if(abs(1.0_dp-pml/pmr).le.NANO) exit
 
-      !Compute next estimate for the intermediate state velocity, vm.
+      !Compute next estimate for the intermediate state velocity, vm
       vm = vm-(pml-pmr)/(dpmldum-dpmrdum)
 
-      !If at 1000 iterations and not converged, print error and stop.
+      !If at 1000 iterations and not converged, print error and stop
       if(n_iterations.eq.1000) then
         write(6,*) "ERROR: Newton-Raphson iterations did not converge in 100 steps in the exact Riemann solver!!!"
         stop
@@ -300,7 +300,7 @@ subroutine Riemann(Wl,Wr,Wls,Wrs,W,istate)
 
     end do
 
-    pm = 0.5*(pml+pmr)
+    pm = 0.5_dp*(pml+pmr)
 
     Wls = WState(g*pm/sqr(aml),vm,pm)
     Wrs = WState(g*pm/sqr(amr),vm,pm)
@@ -366,7 +366,7 @@ end subroutine Riemann
 
 !---------------------------------------------------------------------
 !Determine the intermediate state solution flux by using the exact
-!Riemann solution as originally proposed by Godunov [1959].
+!Riemann solution as originally proposed by Godunov [1959]
 !---------------------------------------------------------------------
 subroutine Godunov(Wl, Wr, F)
   use Euler1D_WState
@@ -375,16 +375,16 @@ subroutine Godunov(Wl, Wr, F)
   type(Euler1D_W_State), intent(in)  :: Wl, Wr
   type(Euler1D_U_State), intent(out) :: F
   type(Euler1D_W_State)              :: Wls, Wrs, W
-  !Determine the exact Riemann solution.
+  !Determine the exact Riemann solution
   call Riemann(Wl,Wr,Wls,Wrs,W,1)
-  !Determine the intermediate flux.
+  !Determine the intermediate flux
   call Flux_W(W,F)
   return
 end subroutine Godunov
 
 !---------------------------------------------------------------------
 !Determine the intermediate state solution flux by using an
-!isentropic approximation.
+!isentropic approximation
 !---------------------------------------------------------------------
 subroutine IsentropicFlux(Wl, Wr, F)
   use realSizes, only: dp
@@ -415,7 +415,7 @@ subroutine IsentropicFlux(Wl, Wr, F)
     Wrs%u = Wls%u
     Wrs%rho = Wr%rho*((Wrs%p/Wr%p)**(1.0_dp/g))
     !Determine the flux:
-    if(Wls%u.ge.0.) then
+    if(Wls%u.ge.0.0_dp) then
       call Flux_W(Wls,F)
     else
       call Flux_W(Wrs,F)
@@ -426,7 +426,7 @@ end subroutine IsentropicFlux
 
 !---------------------------------------------------------------------
 !Determine the intermediate state solution flux by using Rusanov's
-!single wave approximation (1964).
+!single wave approximation (1964)
 !---------------------------------------------------------------------
 subroutine Rusanov(Wl, Wr, F)
   use realSizes, only: dp
@@ -455,14 +455,14 @@ subroutine Rusanov(Wl, Wr, F)
   F = 0.5_dp*(Fl+Fr)
   !Determine the dissipation from the single-wave approxiimation:
   call harten_fix_abs(lambda_a,lambda_l,lambda_r,wavespeeds)
-  lambda_max = 0.5*max(wavespeeds%rho,max(wavespeeds%u,wavespeeds%p))
+  lambda_max = 0.5_dp*max(wavespeeds%rho,max(wavespeeds%u,wavespeeds%p))
   F = F - lambda_max*dUrl
   return
 end subroutine Rusanov
 
 !---------------------------------------------------------------------
 !Determine the intermediate state solution flux by using the
-!HLLE-approximation [1983].
+!HLLE-approximation [1983]
 !---------------------------------------------------------------------
 subroutine HLLE(Wl, Wr, F)
   use realSizes, only: dp
@@ -485,12 +485,12 @@ subroutine HLLE(Wl, Wr, F)
   call lambda_W(Wr,lambda_r)
   call lambda_W(Wa,lambda_a)
   !Determine the left and right wave-speeds:
-  wavespeed_l = min(0.,min(lambda_l%rho,lambda_a%p))
-  wavespeed_r = max(0.,max(lambda_r%rho,lambda_a%p))
+  wavespeed_l = min(0.0_dp,min(lambda_l%rho,lambda_a%p))
+  wavespeed_r = max(0.0_dp,max(lambda_r%rho,lambda_a%p))
   !Determine the intermediate state flux:
-  if(wavespeed_l.ge.0.) then
+  if(wavespeed_l.ge.0.0_dp) then
     call Flux_W(Wl,F)
-  else if(wavespeed_r.le.0.) then
+  else if(wavespeed_r.le.0.0_dp) then
     call Flux_W(Wr,F)
   else
     call Flux_W(Wl,Fl)
@@ -502,7 +502,7 @@ end subroutine HLLE
 
 !---------------------------------------------------------------------
 !Determine the intermediate state solution flux by using Linde's
-!HLLL-approximation [2006].
+!HLLL-approximation [2006]
 !---------------------------------------------------------------------
 subroutine HLLL(Wl, Wr, F)
   use realSizes, only: dp
@@ -523,12 +523,12 @@ subroutine HLLL(Wl, Wr, F)
   call lambda_W(Wr,lambda_r)
   call lambda_W(Wa,lambda_a)
   !Determine the left and right wave-speeds:
-  wavespeed_l = min(0.,min(lambda_l%rho,lambda_a%p))
-  wavespeed_r = max(0.,max(lambda_r%rho,lambda_a%p))
+  wavespeed_l = min(0.0_dp,min(lambda_l%rho,lambda_a%p))
+  wavespeed_r = max(0.0_dp,max(lambda_r%rho,lambda_a%p))
   !Determine the intermediate state flux:
-  if(wavespeed_l.ge.0.) then
+  if(wavespeed_l.ge.0.0_dp) then
     call Flux_W(Wl,F)
-  else if(wavespeed_r.le.0.) then
+  else if(wavespeed_r.le.0.0_dp) then
     call Flux_W(Wr,F)
   else
     !Evaluate the jumps in the conserved solution states:
@@ -562,7 +562,7 @@ end subroutine HLLL
 
 !---------------------------------------------------------------------
 !Determine the intermediate state solution flux by using Toro's
-!HLLC-approximation.
+!HLLC-approximation
 !---------------------------------------------------------------------
 subroutine HLLC(Wl, Wr, F)
   use realSizes, only: dp
@@ -605,7 +605,7 @@ subroutine HLLC(Wl, Wr, F)
   wavespeed_r = Wr%u + qr*ar
   !Determine the middle-wave speed:
   wavespeed_m = um
-  !Determine the intermediate state flux.
+  !Determine the intermediate state flux
   if(wavespeed_l.ge.0.0_dp) then
     call Flux_W(Wl,F)
   else if(wavespeed_r.le.0.0_dp) then
@@ -636,7 +636,7 @@ end subroutine HLLC
 
 !---------------------------------------------------------------------
 !Determine the intermediate state solution flux using Osher's
-!integration method with the physical ordering.
+!integration method with the physical ordering
 !---------------------------------------------------------------------
 subroutine Osher(Wl, Wr, F)
   use realSizes, only: dp
@@ -684,7 +684,7 @@ subroutine Osher(Wl, Wr, F)
   call Flux_W(Wrsp,Frsp)
   !Determine the intermediate state solution flux:
   F = Fl
-  !Integrate over path u-a.
+  !Integrate over path u-a
   if((Wl%u-al.ge.0.0_dp).and.(Wls%u-als.ge.0.0_dp)) then
   else if((Wl%u-al.le.0.0_dp).and.(Wls%u-als.le.0.0_dp)) then
      F = F + Fls - Fl
@@ -693,11 +693,11 @@ subroutine Osher(Wl, Wr, F)
   else if((Wl%u-al.le.0.0_dp).and.(Wls%u-als.ge.0.0_dp)) then
      F = F + Flsp - Fl
   end if
-  !Integrate over path u.
+  !Integrate over path u
   if(Wls%u.lt.0.0_dp) then
      F = F + Frs - Fls
   end if
-  !Integrate over path u+a.
+  !Integrate over path u+a
   if((Wr%u+ar.ge.0.0_dp).and.(Wrs%u+ars.ge.0.0_dp)) then
   else if((Wr%u+ar.le.0.0_dp).and.(Wrs%u+ars.le.0.0_dp)) then
      F = F + Fr - Frs
@@ -711,7 +711,7 @@ end subroutine Osher
 
 !---------------------------------------------------------------------
 !Determine the intermediate state solution flux by using the
-!"linearized" approximate Riemann solver of Roe [1981].
+!"linearized" approximate Riemann solver of Roe [1981]
 !---------------------------------------------------------------------
 subroutine Roe(Wl, Wr, F)
   use realSizes, only: dp
@@ -756,7 +756,7 @@ end subroutine Roe
 
 !---------------------------------------------------------------------
 !Determine the intermediate state solution flux by using 
-!van Leer's flux-splitting scheme [19??].
+!van Leer's flux-splitting scheme [19??]
 !---------------------------------------------------------------------
 subroutine VanLeerFlux(Wl, Wr, F)
   use realSizes, only: dp
@@ -803,7 +803,7 @@ end subroutine VanLeerFlux
 
 !---------------------------------------------------------------------
 !Determine the intermediate state solution flux by using 
-!Liou's AUSM+ scheme [1994].
+!Liou's AUSM+ scheme [1994]
 !---------------------------------------------------------------------
 subroutine AUSMplus(Wl, Wr, F)
   use realSizes, only: dp
@@ -814,8 +814,8 @@ subroutine AUSMplus(Wl, Wr, F)
   implicit none
   type(Euler1D_W_State), intent(in)    :: Wl, Wr
   type(Euler1D_U_State), intent(inout) :: F
-  real(dp) :: beta = 0.125
-  real(dp) :: alpha = 0.1875
+  real(dp) :: beta = 0.125_dp
+  real(dp) :: alpha = 0.1875_dp
   real(dp) :: Ml, Mr, Mplus, Mminus, Mhalf
   real(dp) :: al, ar, ahalf, Hl, Hr, uhalf
   real(dp) :: pplus, pminus, phalf
@@ -825,39 +825,39 @@ subroutine AUSMplus(Wl, Wr, F)
   Hl = H_W(Wl)
   Hr = H_W(Wr)
   !Determine the intermediate state sound speed:
-  ahalf = 0.5*(al+ar)
+  ahalf = 0.5_dp*(al+ar)
   !Determine the left and right state Mach numbers based on the
   !intermediate state sound speed:
   Ml = Wl%u/ahalf
   Mr = Wr%u/ahalf
   !Determine the left state split Mach number:
-  if(abs(Ml).le.1.) then
-    Mplus = 0.25*sqr(Ml+1.) + beta*sqr(Ml*Ml-1.)
-    pplus = 0.25*sqr(Ml+1.)*(2.-Ml) + alpha*Ml*sqr(Ml*Ml-1.)
+  if(abs(Ml).le.1.0_dp) then
+    Mplus = 0.25_dp*sqr(Ml+1.0_dp) + beta*sqr(Ml*Ml-1.0_dp)
+    pplus = 0.25_dp*sqr(Ml+1.0_dp)*(2.0_dp-Ml) + alpha*Ml*sqr(Ml*Ml-1.0_dp)
   else
-    Mplus = 0.5*(Ml + abs(Ml))
-    pplus = 0.5*(1. + abs(Ml)/max(Ml,NANO))
+    Mplus = 0.5_dp*(Ml + abs(Ml))
+    pplus = 0.5_dp*(1.0_dp + abs(Ml)/max(Ml,NANO))
   end if
   !Determine the right state split Mach number:
-  if(abs(Mr).lt.1.) then
-    Mminus = -0.25*sqr(Mr-1.) - beta*sqr(Mr*Mr-1.)
-    pminus = 0.25*sqr(Mr-1.)*(2.+Mr) - alpha*Mr*sqr(Mr*Mr-1.)
+  if(abs(Mr).lt.1.0_dp) then
+    Mminus = -0.25_dp*sqr(Mr-1.0_dp) - beta*sqr(Mr*Mr-1.0_dp)
+    pminus = 0.25_dp*sqr(Mr-1.0_dp)*(2.0_dp+Mr) - alpha*Mr*sqr(Mr*Mr-1.0_dp)
   else
-    Mminus = 0.5*(Mr - abs(Mr))
-    pminus = 0.5*(1. - abs(Mr)/max(Mr,NANO))
+    Mminus = 0.5_dp*(Mr - abs(Mr))
+    pminus = 0.5_dp*(1.0_dp - abs(Mr)/max(Mr,NANO))
   end if
   !Determine the intermediate state Mach number and pressure:
   Mhalf = Mplus + Mminus
   phalf = pplus*Wl%p + pminus*Wr%p
   uhalf = ahalf*Mhalf
   !Determine the intermediate state solution convective flux:
-  F%rho = 0.5*uhalf*(Wl%rho + Wr%rho)
-  F%du = 0.5*uhalf*(Wl%rho*Wl%u + Wr%rho*Wr%u)
-  F%E = 0.5*uhalf*(Hl + Hr)
+  F%rho = 0.5_dp*uhalf*(Wl%rho + Wr%rho)
+  F%du = 0.5_dp*uhalf*(Wl%rho*Wl%u + Wr%rho*Wr%u)
+  F%E = 0.5_dp*uhalf*(Hl + Hr)
   !Add the numerical dissipation to the intermediate state solution flux:
-  F%rho = F%rho - 0.5*abs(uhalf)*(Wr%rho - Wl%rho)
-  F%du = F%du - 0.5*abs(uhalf)*(Wr%rho*Wr%u - Wl%rho*Wl%u)
-  F%E = F%E - 0.5*abs(uhalf)*(Hr - Hl)
+  F%rho = F%rho - 0.5_dp*abs(uhalf)*(Wr%rho - Wl%rho)
+  F%du = F%du - 0.5_dp*abs(uhalf)*(Wr%rho*Wr%u - Wl%rho*Wl%u)
+  F%E = F%E - 0.5_dp*abs(uhalf)*(Hr - Hl)
   !Add the pressure contribution to the intermediate state solution flux:
   F%du = F%du + phalf
   return
@@ -876,8 +876,8 @@ subroutine AUSMplusup(Wl, Wr, F)
   implicit none
   type(Euler1D_W_State), intent(in)    :: Wl, Wr
   type(Euler1D_U_State), intent(inout) :: F
-  real(dp) :: beta = 0.125
-  real(dp) :: alpha = 0.1875
+  real(dp) :: beta = 0.125_dp
+  real(dp) :: alpha = 0.1875_dp
   real(dp) :: Ml, Mr, Mplus, Mminus, Mhalf
   real(dp) :: al, ar, ahalf, Hl, Hr, uhalf
   real(dp) :: pplus, pminus, phalf
@@ -887,39 +887,39 @@ subroutine AUSMplusup(Wl, Wr, F)
   Hl = H_W(Wl)
   Hr = H_W(Wr)
   !Determine the intermediate state sound speed:
-  ahalf = 0.5*(al+ar)
+  ahalf = 0.5_dp*(al+ar)
   !Determine the left and right state Mach numbers based on the
   !intermediate state sound speed:
   Ml = Wl%u/ahalf
   Mr = Wr%u/ahalf
   !Determine the left state split Mach number:
-  if(abs(Ml).le.1.) then
-    Mplus = 0.25*sqr(Ml+1.) + beta*sqr(Ml*Ml-1.)
-    pplus = 0.25*sqr(Ml+1.)*(2.-Ml) + alpha*Ml*sqr(Ml*Ml-1.)
+  if(abs(Ml).le.1.0_dp) then
+    Mplus = 0.25_dp*sqr(Ml+1.0_dp) + beta*sqr(Ml*Ml-1.0_dp)
+    pplus = 0.25_dp*sqr(Ml+1.0_dp)*(2.0_dp-Ml) + alpha*Ml*sqr(Ml*Ml-1.0_dp)
   else
-    Mplus = 0.5*(Ml + abs(Ml))
-    pplus = 0.5*(1. + abs(Ml)/max(Ml,NANO))
+    Mplus = 0.5_dp*(Ml + abs(Ml))
+    pplus = 0.5_dp*(1.0_dp + abs(Ml)/max(Ml,NANO))
   end if
   !Determine the right state split Mach number:
   if(abs(Mr).lt.1.) then
-    Mminus = -0.25*sqr(Mr-1.) - beta*sqr(Mr*Mr-1.)
-    pminus = 0.25*sqr(Mr-1.)*(2.+Mr) - alpha*Mr*sqr(Mr*Mr-1.)
+    Mminus = -0.25_dp*sqr(Mr-1.0_dp) - beta*sqr(Mr*Mr-1.0_dp)
+    pminus = 0.25_dp*sqr(Mr-1.0_dp)*(2.0_dp+Mr) - alpha*Mr*sqr(Mr*Mr-1.0_dp)
   else
-    Mminus = 0.5*(Mr - abs(Mr))
-    pminus = 0.5*(1. - abs(Mr)/max(Mr,NANO))
+    Mminus = 0.5_dp*(Mr - abs(Mr))
+    pminus = 0.5_dp*(1.0_dp - abs(Mr)/max(Mr,NANO))
   end if
   !Determine the intermediate state Mach number and pressure:
   Mhalf = Mplus + Mminus
   phalf = pplus*Wl%p + pminus*Wr%p
   uhalf = ahalf*Mhalf
   !Determine the intermediate state solution convective flux:
-  F%rho = 0.5*uhalf*(Wl%rho + Wr%rho)
-  F%du = 0.5*uhalf*(Wl%rho*Wl%u + Wr%rho*Wr%u)
-  F%E = 0.5*uhalf*(Hl + Hr)
+  F%rho = 0.5_dp*uhalf*(Wl%rho + Wr%rho)
+  F%du = 0.5_dp*uhalf*(Wl%rho*Wl%u + Wr%rho*Wr%u)
+  F%E = 0.5_dp*uhalf*(Hl + Hr)
   !Add the numerical dissipation to the intermediate state solution flux:
-  F%rho = F%rho - 0.5*abs(uhalf)*(Wr%rho - Wl%rho)
-  F%du = F%du - 0.5*abs(uhalf)*(Wr%rho*Wr%u - Wl%rho*Wl%u)
-  F%E = F%E - 0.5*abs(uhalf)*(Hr - Hl)
+  F%rho = F%rho - 0.5_dp*abs(uhalf)*(Wr%rho - Wl%rho)
+  F%du = F%du - 0.5_dp*abs(uhalf)*(Wr%rho*Wr%u - Wl%rho*Wl%u)
+  F%E = F%E - 0.5_dp*abs(uhalf)*(Hr - Hl)
   !Add the pressure contribution to the intermediate state solution flux:
   F%du = F%du + phalf
   return

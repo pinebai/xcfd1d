@@ -301,6 +301,7 @@ contains
     else
      ierr = 0
     end if
+    return
   end function unphysical_properties_U
 
   !Conserved right eigenvector
@@ -326,6 +327,7 @@ contains
      r%du = v + a
      r%E = h + a*v
     end select
+    return
   end subroutine rc_U
 
   !Area-change source term
@@ -337,6 +339,7 @@ contains
     Sa%rho = -(U%du)*dA/xA
     Sa%du = -(U%du*U%du/U%rho)*dA/xA
     Sa%E = -(U%du*H/U%rho)*dA/xA
+    return
   end function Sa
 
   !Flux
@@ -348,6 +351,7 @@ contains
     F%rho = U%du
     F%du = U%du*U%du/U%rho + p
     F%E = U%du*(U%E+p)/U%rho
+    return
   end subroutine Flux_U
 
   !Flux Jacobian
@@ -366,6 +370,7 @@ contains
     dFdU(3,1) = gm1*v*v*v - g*v*U%E/U%rho
     dFdU(3,2) = g*U%E/U%rho - 0.5_dp*3.0_dp*gm1*v*v
     dFdU(3,3) = g*v
+    return
   end subroutine dFdU_U
 
 end module Euler1D_UState
@@ -906,6 +911,7 @@ contains
     Q%p = 0.0_dp
     Q%u = 0.0_dp
     Q%T = 0.0_dp
+    return
   end subroutine vacuum_Q
 
   !Set state to standard atmosphere
@@ -914,6 +920,7 @@ contains
     Q%p = 101325.0_dp
     Q%u = 0.0_dp
     Q%T = 288.15_dp
+    return
   end subroutine standard_atmosphere_Q
 
   !Set state to specified constant
@@ -923,6 +930,7 @@ contains
     Q%p = val
     Q%u = val
     Q%T = val
+    return
   end subroutine constant_Q
 
   !Copy the specified state
@@ -932,6 +940,7 @@ contains
     Q1%p = Q2%p
     Q1%u = Q2%u
     Q1%T = Q2%T
+    return
   end subroutine copy_Q
 
   !Set the state to the specified values
@@ -940,6 +949,7 @@ contains
     QState%p = p
     QState%u = u
     QState%T = T
+    return
   end function QState
 
   !Determine the minimum state values
@@ -949,6 +959,7 @@ contains
     min_Q%p = min(Q1%p,Q2%p)
     min_Q%u = min(Q1%u,Q2%u)
     min_Q%T = min(Q1%T,Q2%T)
+    return
   end function min_Q
 
   !Determine the maximum state values
@@ -958,6 +969,7 @@ contains
     max_Q%p = max(Q1%p,Q2%p)
     max_Q%u = max(Q1%u,Q2%u)
     max_Q%T = max(Q1%T,Q2%T)
+    return
   end function max_Q
 
   !Calculate the density of the gas
@@ -965,6 +977,7 @@ contains
     use gasConstants, only: R
     type(Euler1D_Q_State), intent(in) :: Q
     rho_Q = Q%p/(R*Q%T)
+    return
   end function rho_Q
 
   !Calculate the momentum of the gas
@@ -973,6 +986,7 @@ contains
     real(dp) :: rho
     rho = rho_Q(Q)
     du_Q = rho*Q%u
+    return
   end function du_Q
 
   !Calculate the specific internal energy of the gas
@@ -990,6 +1004,7 @@ contains
     real(dp) :: rho
     rho = rho_Q(Q)
     E_Q = gm1i*Q%p + 0.5_dp*rho*Q%u*Q%u
+    return
   end function E_Q
 
   !Calculate the specific internal energy of the gas
@@ -1103,6 +1118,7 @@ contains
     dFdU(3,1) = gm1*Q%u*Q%u*Q%u - g*Q%u*E/rho
     dFdU(3,2) = g*E/rho - 0.5_dp*3.*gm1*Q%u*Q%u
     dFdU(3,3) = g*Q%u
+    return
   end subroutine dFdU_Q
 
   !Eigenvalue(s)
@@ -1114,6 +1130,7 @@ contains
     lambda%p = Q%u-a
     lambda%u = Q%u
     lambda%T = Q%u+a
+    return
   end subroutine lambda_Q
 
   !Primitive right eigenvector
@@ -1140,6 +1157,7 @@ contains
      rp%u = a/rho
      rp%T = a2
     end select
+    return
   end subroutine rp_Q
 
   !Primitive left eigenvector
@@ -1166,6 +1184,7 @@ contains
      lp%u = 0.5_dp*rho/a
      lp%T = 0.5_dp/a2
     end select
+    return
   end subroutine lp_Q
 
   !Conserved right eigenvector
@@ -1190,15 +1209,17 @@ contains
      rc%du = Q%u + a
      rc%E = h + a*Q%u
     end select
+    return
   end subroutine rc_Q
 
   !Reflection boundary condition
-  subroutine Reflect_Q(Q1, Q2)
+  subroutine reflect_Q(Q1, Q2)
     type(Euler1D_Q_State), intent(out) :: Q1
     type(Euler1D_Q_State), intent(in)  :: Q2
     Q1%p = Q2%p
     Q1%u = - Q2%u
     Q1%T = Q2%T
-  end subroutine Reflect_Q
+    return
+  end subroutine reflect_Q
 
 end module Euler1D_QState

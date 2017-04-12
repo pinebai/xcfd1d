@@ -1,88 +1,49 @@
-#----------------------------------------+
-# MODIFIED SOD'S PROBLEM                 |
-#                                        |
-# (x,t) = (0.30,0.20), (0 <= x <= 1.0)   |
-#                                        |
-# Wl = Euler1D_pState(1.000,0.75,1.00)   |
-# Wr = Euler1D_pState(0.125,0.00,0.10)   |
-#                                        |
-#----------------------------------------+
+# MODIFIED SOD'S PROBLEM
+#
+# (x,t) = (0.30,0.20), (0 <= x <= 1.0)
+#
+# Wl = Euler1D_pState(1.000,0.75,1.00)
+# Wr = Euler1D_pState(0.125,0.00,0.10)
 
-# PROBLEM PARAMETERS:
-&problem
- i_problem = 2,
- num_cells = 100
- num_ghost = 2,
- i_gas_type = 0,
-/
+# PROBLEM PARAMETERS
+Problem =
+Modified Sod
+Number of Cells =
+100
+Gas Type =
+Air
 
-# TEMPORAL DISCRETIZATION:
-&temporal
- i_explicit = 2
- n_stage = 4
- cfl_number = 0.25
- time_max = 0.20
- max_time_steps = 10000
- i_output_freq = 10
-/
+# TEMPORAL DISCRETIZATION
+Time Stepping Scheme =
+Runge Kutta
+Number of Stages = 
+2
+CFL Number =
+0.25
+Maximum Time =
+0.20
+Time Stepping =
+Global
 
-# SPATIAL DISCRETIZATION:
-&spatial
- i_flux = 7
- i_limiter = 10
- i_recon = 1
-/
-# Godunov = 0
-# Isentropic = 1
-# Rusanov = 2
-# HLLE = 3
-# HLLL = 4
-# HLLC = 5
-# Osher-P = 6
-# Roe = 7
-# van Leer = 8
-# AUSM+ = 9
+# SPATIAL DISCRETIZATION
+Flux Scheme =
+Roe
+Gradient Reconstruction =
+Least Squares
+Limiter =
+Barth Jespersen
 
-# zero = 0
-# one = 1
-# van Leer = 7
-# van Albada = 8
-# Barth-Jespersen = 10
-# Venkatakrishnan = 11
+# OUTPUT
+Output Frequency =
+10
+File Name =
+output
 
+# EXECUTE PROGRAM
+execute
 
-# OUTPUT FORMATS:
-&output
- plot_tecplot = false,
- plot_gnuplot = false,
- plot_eps     = false,
- plot_python  = true,
-/
+# PLOT DATA
+plot python
 
-# Density = 1
-# Speed = 2
-# Pressure = 3
-# Temperature = 4
-# Internal Energy = 5
-# Mach Number = 6
-
-# EPS PLOTS:
-&eps_plots
- nplots = 6
- Xf = 640, 640, 640, 640, 640, 640
- Yf = 400, 400, 400, 400, 400, 400
- Xo =  56,  56,  56,  75,  56,  60
- Yo =  35,  35,  35,  35,  35,  35
- Xa =  38,  38,  38,  50,  38,  38
- Ya =  14,  14,  14,  14,  14,  14
- xvar = 1, 1, 1, 1, 1, 1
- yvar = 1, 2, 3, 4, 5, 6
- xmin = 0.00, 0.00, 0.00, 0.0000, 0.00, 0.00
- ymin = 0.00, 0.00, 0.00, 0.0020, 1.80, 0.00
- xmax = 1.00, 1.00, 1.00, 1.0000, 1.00, 1.00
- ymax = 1.05, 1.60, 1.05, 0.0050, 3.80, 1.50
- dx   = 0.20, 0.20, 0.20, 0.2000, 0.20, 0.20
- dy   = 0.20, 0.40, 0.20, 0.0006, 0.50, 0.50
- xsig = 1, 1, 1, 1, 1, 1
- ysig = 1, 1, 1, 4, 1, 1
-/
+# TERMINATE PROGRAM
+terminate

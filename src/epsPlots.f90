@@ -45,6 +45,7 @@ contains
   !---------------------------------------------------------------------
   subroutine profile_plot(Xf, Yf, Xo, Yo, Xa, Ya, xmin, xmax, dx, xdim, &
        ymin, ymax, dy, ydim, xsig, ysig, m, n, x, y, ne, xe, ye)
+    use inputParams, only: plot_file
     implicit none
     !Argument variables:
     real(dp), intent(in) :: Xf, Yf, Xo, Yo, Xa, Ya
@@ -58,23 +59,25 @@ contains
     real(dp) :: xx, yy
     integer  :: nn, nx, ny
     integer  :: i, j
+    character(len=28) :: fname
     if(m.eq.PLOT_DENSITY) then
-       open(unit=7,FILE='density.eps',STATUS='REPLACE')
+      fname = trim(plot_file)//'_density.eps'
     else if(m.eq.PLOT_SPEED) then
-       open(unit=7,FILE='speed.eps',STATUS='REPLACE')
+      fname = trim(plot_file)//'_speed.eps'
     else if(m.eq.PLOT_PRESSURE) then
-       open(unit=7,FILE='pressure.eps',STATUS='REPLACE')
+      fname = trim(plot_file)//'_pressure.eps'
     else if(m.eq.PLOT_TEMPERATURE) then
-       open(unit=7,FILE='temperature.eps',STATUS='REPLACE')
+      fname = trim(plot_file)//'_temperature.eps'
     else if(m.eq.PLOT_INTERNAL_ENERGY) then
-       open(unit=7,FILE='internal_energy.eps',STATUS='REPLACE')
+      fname = trim(plot_file)//'_internal_energy.eps'
     else if(m.eq.PLOT_MACH_NUMBER) then
-       open(unit=7,FILE='mach_number.eps',STATUS='REPLACE')
+      fname = trim(plot_file)//'_mach_number.eps'
     else if(m.eq.PLOT_CROSS_SECTIONAL_AREA) then
-       open(unit=7,FILE='area.eps',STATUS='REPLACE')
+      fname = trim(plot_file)//'_area.eps'
     else
-       open(unit=7,FILE='darea.eps',STATUS='REPLACE')
+      fname = trim(plot_file)//'_darea.eps'
     end if
+    open(unit=7,file=trim(fname),status='replace')
     write(7,'(a)') "%!EPS-Adobe-3.0"
     write(7,'(2(a,i6),2(a,f6.1))') "%%BoundingBox: ", -5, " ", -5, " ", Xf+5, " ", Yf+5
     write(7,'(a)') "%%Magnification: 1.0000"
@@ -241,6 +244,7 @@ contains
   !---------------------------------------------------------------------
   subroutine residual_plot(Xf, Yf, Xo, Yo, Xa, Ya, xmin, xmax, dx, &
        ymin, ymax, dy, m, n, y)
+    use inputParams, only: plot_file
     implicit none
     real(dp), intent(in) :: Xf, Yf, Xo, Yo, Xa, Ya
     real(dp), intent(in) :: xmin, xmax, dx, ymin, ymax, dy
@@ -248,13 +252,15 @@ contains
     real(dp), dimension(n,3), intent(in) :: y
     real(dp) :: xx, yy
     integer  :: nn, nx, ny, nv
+    character(len=28) :: fname
     if(m.eq.PLOT_L1_NORM_RESIDUAL) then
-      open(unit=7,FILE='l1norm.eps',STATUS='REPLACE')
+      fname = trim(plot_file)//'_l1norm.eps'
     else if(m.eq.PLOT_L2_NORM_RESIDUAL) then
-      open(unit=7,FILE='l2norm.eps',STATUS='REPLACE')
+      fname = trim(plot_file)//'_l2norm.eps'
     else
-      open(unit=7,FILE='maxnorm.eps',STATUS='REPLACE')
+      fname = trim(plot_file)//'_mxnorm.eps'
     end if
+    open(unit=7,file=trim(fname),status='replace')
     write(7,'(a)') "%!EPS-Adobe-3.0"
     write(7,'(2(a,i6),2(a,f6.1))') "%%BoundingBox: ", -5, " ", -5, " ", Xf+5, " ", Yf+5
     write(7,'(a)') "%%Magnification: 1.0000"

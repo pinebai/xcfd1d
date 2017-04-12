@@ -50,6 +50,7 @@ module cfdParams
   !Define time-stepping types:
   integer, parameter :: GLOBAL_TIME_STEP = 0
   integer, parameter :: LOCAL_TIME_STEP = 1
+  integer, parameter :: GLOBAL_STEADY_STATE = 2
 
   !Define flux functions:
   integer, parameter :: FLUX_GODUNOV = 0

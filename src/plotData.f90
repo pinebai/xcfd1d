@@ -1,14 +1,51 @@
 !---------------------------------------------------------------------
 !---------------------------------------------------------------------
+subroutine plot_data
+  use inputParams, only: plot_python, plot_gnuplot, plot_tecplot, plot_eps
+  implicit none
+  
+  !Output cell-centered data in format for python plotting:
+  if(plot_python) then
+    write(6,"(a)") ' -> Output cell-centered data for plotting with python/matplotlib'
+    call python_output
+  end if
+
+  !Output cell-centered data in gnuplot format:
+  if(plot_gnuplot) then
+    write(6,"(a)") ' -> Output cell-centered data for plotting with gnuplot'
+    call gnuplot_output
+  end if
+
+  !Output cell-centered data in Tecplot format:
+  if(plot_tecplot) then
+    write(6,"(a)") ' -> Output cell-centered data for plotting with Tecplot'
+    call tecplot_output
+    call tecplot_residual
+  end if
+
+  !Output plots of cell-centered data directly as eps figures:
+  if(plot_eps) then
+    write(6,"(a)") ' -> Output cell-centered data in EPS format'
+    call eps_output
+  end if
+
+  return
+end subroutine plot_data
+
+!---------------------------------------------------------------------
+!---------------------------------------------------------------------
 subroutine python_output
   use cfdParams
+  use inputParams, only: plot_file
   use solnBlock_module
   use gridBlock_module
   use exactSoln_module
   implicit none
   integer :: n, nvar
+  character(len=128) :: fname
+  fname = trim(plot_file)//'.dat'
   !Open the input file.
-  open(unit=8,file='output.dat',status='REPLACE')
+  open(unit=8,file=trim(fname),status='REPLACE')
   !Create the output file header:
   nvar = 11
   if(i_grid.eq.GRID_NOZZLE) nvar = 12
@@ -119,19 +156,23 @@ subroutine eps_output
          ymin(m), ymax(m), dy(m), ydim(m), xsig(m), ysig(m), &
          yvar(m), np, Cell(NCl:NCu)%xc, var, ne, loce, vare)
   end do
+  return
 end subroutine eps_output
 
 !---------------------------------------------------------------------
 !---------------------------------------------------------------------
 subroutine tecplot_output
   use cfdParams
+  use inputParams, only: plot_file
   use solnBlock_module
   use gridBlock_module
   use exactSoln_module
   implicit none
   integer :: n
+  character(len=128) :: fname
+  fname = trim(plot_file)//'.dat'
   !Open the input file.
-  open(unit=8,file='output_tecplot.dat',status='REPLACE')
+  open(unit=8,file=trim(fname),status='REPLACE')
   !Create the output file header:
   write(8,*) 'TITLE = "xCFD1D Solution"'
   write(8,*) 'VARIABLES = "x" \\'
@@ -192,6 +233,7 @@ end subroutine tecplot_output
 !---------------------------------------------------------------------
 !---------------------------------------------------------------------
 subroutine tecplot_residual
+  use inputParams, only: plot_file
   use Euler1D_UState
   use realsizes, only: dp
   implicit none
@@ -200,8 +242,10 @@ subroutine tecplot_residual
   real(dp) :: t
   type(Euler1D_U_State) :: l1, l2, mx
   character(len=255) :: buffer
+  character(len=128) :: fname
+  fname = trim(plot_file)//'_residual.dat'
   !Open the input file.
-  open(unit=8,file='residual_tecplot.dat',status='REPLACE')
+  open(unit=8,file=trim(fname),status='REPLACE')
   !Create the output file header:
   write(8,*) 'TITLE = "xCFD1D Residual"'
   write(8,*) 'VARIABLES = "n" \\'
@@ -215,7 +259,8 @@ subroutine tecplot_residual
   write(8,*) '"mx-rho" \\'
   write(8,*) '"mx-du" \\'
   write(8,*) '"mx-E" \\'
-  open(unit=4,file='residual.dat',status='old',action='read',position='rewind')
+  fname = trim(plot_file)//'.rsd'
+  open(unit=4,file=trim(fname),status='old',action='read',position='rewind')
   read(4,'(a)') buffer !Header line
   ierr = 0
   npts = 0
@@ -242,14 +287,17 @@ end subroutine tecplot_residual
 !---------------------------------------------------------------------
 subroutine gnuplot_output
   use cfdParams
+  use inputParams, only: plot_file
   use solnBlock_module
   use gridBlock_module
   use exactSoln_module
   implicit none
   integer :: n
+  character(len=128) :: fname
   !Write the exact solution file if available:
   if(ne.gt.0) then
-    open(unit=8,file='exact_gnuplot.dat',status='REPLACE')
+    fname = trim(plot_file)//'_exact.dat'
+    open(unit=8,file=trim(fname),status='REPLACE')
     do n = 1, ne
       write(8,'(es20.12,$)') Xe(n)%xc
       if(i_grid.eq.GRID_NOZZLE) write(8,'(es20.12,$)') Xe(n)%xa
@@ -267,6 +315,7 @@ subroutine gnuplot_output
     close(8)
   end if
   !Write the current solution to the data file.
+  fname = trim(plot_file)//'.dat'
   open(unit=8,file='output_gnuplot.dat',status='REPLACE')
   do n = NCl, NCu
     write(8,'(es20.12,$)') Cell(n)%xc

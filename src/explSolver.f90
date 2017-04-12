@@ -237,11 +237,19 @@ contains
 
   !---------------------------------------------------------------------
   !---------------------------------------------------------------------
-  subroutine open_residual_file
+  subroutine open_residual_file(iopt)
+    use inputParams, only: plot_file
     implicit none
-    open(unit=4,file='residual.dat',status='REPLACE')
-    write(4,'(a5,10(a11))') 'n', 'time', 'l1-rho', 'l1-du', 'l1-E', &
-         'l2-rho', 'l2-du', 'l2-E', 'mx-rho', 'mx-du', 'mx-E'
+    integer, intent(in) :: iopt
+    character(len=128) :: fname
+    fname = trim(plot_file)//".rsd"
+    if(iopt.eq.1) then
+      open(unit=4,file=trim(fname),status='replace',action='write')
+      write(4,'(a5,10(a11))') 'n', 'time', 'l1-rho', 'l1-du', 'l1-E', &
+           'l2-rho', 'l2-du', 'l2-E', 'mx-rho', 'mx-du', 'mx-E'
+    else
+      open(unit=4,file=trim(fname),status='old',position='append',action='write')
+    end if
     return
   end subroutine open_residual_file
 

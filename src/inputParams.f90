@@ -7,6 +7,15 @@ module inputParams
   
   implicit none
 
+  !Define input directives:
+  integer, parameter      :: TERMINATE = -1      !Terminates the program
+  integer, parameter      :: NOTHING   =  0      !Find the next input
+  integer, parameter      :: EXECUTE   =  1      !Start running the program
+  integer, parameter      :: CONTINUE  =  2      !Continue running the program after input changes
+  integer, parameter      :: PYTHON    =  3      !Write out python plot files
+  integer, parameter      :: GNUPLOT   =  4      !Write out gnuplot files
+  integer, parameter      :: TECPLOT   =  5      !Write out tecplot files
+
   !Problem related input parameters:
   integer                 :: i_problem           !Problem specification
   integer                 :: num_cells           !Number of cells in the domain
@@ -24,9 +33,8 @@ module inputParams
   integer                 :: i_time_step         !Global or local time-stepping
   real(dp)                :: time_max            !Maximum solution time
   integer                 :: max_time_steps      !Maximum number of time steps
-  integer                 :: i_output_freq       !Frequency of updates on screen
   namelist / temporal / i_explicit, n_stage, cfl_number, time_max, &
-       i_time_step, max_time_steps, i_output_freq
+       i_time_step, max_time_steps
 
   !Spatial discretization parameters:
   integer                 :: i_flux              !Flux function type
@@ -36,12 +44,13 @@ module inputParams
   namelist / spatial / i_flux, i_limiter, i_recon, betam
 
   !Output formats:
-  character(len=64)       :: plot_name           !Name of output file
+  integer                 :: i_output_freq       !Frequency of updates on screen
+  character(len=64)       :: plot_file           !Name of output file
   logical                 :: plot_tecplot        !Write output to Tecplot format
   logical                 :: plot_gnuplot        !Write output to gnuplot format
   logical                 :: plot_python         !Write output to format ready for python (matplotlib)
   logical                 :: plot_eps            !Make encapsulated post-script plots
-  namelist / output / plot_name, plot_tecplot, plot_gnuplot, plot_python, plot_eps
+  namelist / output / i_output_freq, plot_file, plot_tecplot, plot_gnuplot, plot_python, plot_eps
 
   !EPS Figures:
   integer,  parameter     :: max_plots = 20
@@ -85,7 +94,7 @@ contains
     i_recon = RECONSTRUCTION_LSQ
     betam = 0.5_dp
     !Output formats:
-    plot_name    = 'output'
+    plot_file    = 'output'
     plot_tecplot = .false.
     plot_gnuplot = .false.
     plot_eps     = .false.
@@ -103,7 +112,25 @@ contains
   end subroutine inputDefaults
 
   !---------------------------------------------------------------------
-  ! Read in input parameters from namelists
+  ! Open the input file
+  !---------------------------------------------------------------------
+  subroutine inputOpen(fname)
+    implicit none
+    character(len=128) :: fname
+    open(unit=7,file=trim(fname))
+    return
+  end subroutine inputOpen
+
+  !---------------------------------------------------------------------
+  ! Close the input file
+  !---------------------------------------------------------------------
+  subroutine inputClose
+    close(7)
+    return
+  end subroutine inputClose
+
+  !---------------------------------------------------------------------
+  ! Read input parameters from namelists
   !---------------------------------------------------------------------
   subroutine inputNamelists
     use gasConstants, only: setGas
@@ -239,6 +266,13 @@ contains
     else if(i_explicit.eq.MULTISTAGE_OPTIMAL_SMOOTHING) then
       write(6,"(a)") "    - Multistage optimal smoothing"
     end if
+    if(i_time_step.eq.GLOBAL_TIME_STEP) then
+      write(6,"(a)") "    - Global time-stepping"
+    else if(i_time_step.eq.LOCAL_TIME_STEP) then
+      write(6,"(a)") "    - Local time-stepping"
+    else if(i_time_step.eq.GLOBAL_STEADY_STATE) then
+      write(6,"(a)") "    - Global steady-state"
+    end if
     if(i_flux.eq.FLUX_GODUNOV) then
       write(6,"(a)") "    - Fluxes calculated using the exact Riemann solution"
     else if(i_flux.eq.FLUX_ISENTROPIC) then
@@ -261,8 +295,8 @@ contains
       write(6,"(a)") "    - Fluxes calculated using Liou's AUSM+"
     else if(i_flux.eq.FLUX_AUSMplusup) then
       write(6,"(a)") "    - Fluxes calculated using Liou's AUSM+up"
-!   else if(i_flux.eq.FLUX_SLAU) then
-!     write(6,"(a)") "    - Fluxes calculated using Shima's version of AUSM"
+    else if(i_flux.eq.FLUX_SLAU) then
+      write(6,"(a)") "    - Fluxes calculated using Shima's version of AUSM"
     end if
     if(i_limiter.ne.LIMITER_ZERO) then
       if(i_recon.eq.RECONSTRUCTION_GG) then
@@ -293,5 +327,287 @@ contains
 
     return
   end subroutine inputWrite
+
+  !---------------------------------------------------------------------
+  ! Remove equals sign from string
+  !---------------------------------------------------------------------
+  subroutine remove_char(str,buf)
+    implicit none
+    character(len=128), intent(inout) :: str
+    character(len=1),   intent(in)    :: buf
+    integer :: i, ic
+    character(len=128) :: strc
+    strc = str
+    do i = 1, len_trim(strc)
+      ic = index(buf,str(i:i))
+      if(ic.gt.0) str(i:i) = ' '
+    end do
+    return
+  end subroutine remove_char
+
+  !---------------------------------------------------------------------
+  ! Changes string entries to lower case
+  !---------------------------------------------------------------------
+  subroutine to_lower(str)
+    implicit none
+    character(len=128), intent(inout):: str
+    integer :: i, ic
+    character(len=28), parameter :: upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    character(len=28), parameter :: lower = 'abcdefghijklmnopqrstuvwxyz'
+    character(len=128) :: strc
+    strc = str
+    do i = 1, len_trim(strc)
+      ic = index(upper,str(i:i))
+      if(ic.gt.0) str(i:i) = lower(ic:ic)
+    end do
+    return
+  end subroutine to_lower
+
+  !---------------------------------------------------------------------
+  ! Parse the input file, return the next directive tag
+  !---------------------------------------------------------------------
+  subroutine inputParse(iotag)
+    use cfdParams
+    use gasConstants
+    implicit none
+    !Argument variable:
+    integer, intent(out) :: iotag
+    !Local variables:
+    character(len=128) :: buffer
+    iotag = NOTHING
+    read(7,'(a)') buffer
+    call remove_char(buffer,'=')
+    call remove_char(buffer,'-')
+    call remove_char(buffer,'_')
+    call to_lower(buffer)
+    if(trim(buffer).eq.'terminate') then
+      iotag = TERMINATE
+    else if(trim(buffer).eq.'execute') then
+      iotag = EXECUTE
+    else if(trim(buffer).eq.'continue') then
+      iotag = CONTINUE
+    else if(trim(buffer).eq.'plot python') then
+      iotag = PYTHON
+    else if(trim(buffer).eq.'plot gnuplot') then
+      iotag = GNUPLOT
+    else if(trim(buffer).eq.'plot tecplot') then
+      iotag = TECPLOT
+    else if(buffer(1:1).eq.'#') then
+      iotag = NOTHING
+    else
+      iotag = NOTHING
+      !--------------------!
+      ! Problem parameters !
+      !--------------------!
+      if(trim(buffer).eq.'problem') then
+        read(7,'(a)') buffer
+        call to_lower(buffer)
+        select case(trim(buffer))
+        case('sod problem')
+          i_problem = SOD_PROBLEM
+        case('modified sod')
+          i_problem = MODIFIED_SOD
+        case('strong sod')
+          i_problem = STRONG_SOD
+        case('123 problem')
+          i_problem = PROBLEM_123
+        case('three right waves')
+          i_problem = THREE_RIGHT_WAVES
+        case('stationary contact')
+          i_problem = STATIONARY_CONTACT
+        case('subsonic nozzle')
+          i_problem = SUBSONIC_NOZZLE
+        case('transonic nozzle')
+          i_problem = TRANSONIC_NOZZLE
+        case('square wave')
+          i_problem = SQUARE_WAVE
+        case('sine squared wave')
+          i_problem = SINE_SQUARED_WAVE
+        end select
+      else if(trim(buffer).eq.'wave width') then
+        read(7,*) wm
+      else if(trim(buffer).eq.'wave speed') then
+        read(7,*) um
+      else if(trim(buffer).eq.'wave density') then
+        read(7,*) rhom
+      else if(trim(buffer).eq.'wave pressure') then
+        read(7,*) pm
+      else if(trim(buffer).eq.'number of cells') then
+        read(7,*) num_cells
+      else if(trim(buffer).eq.'gas type') then
+        read(7,'(a)') buffer
+        call to_lower(buffer)
+        select case(trim(buffer))
+        case('air')
+          i_gas_type = GAS_AIR
+        case('he')
+          i_gas_type = GAS_HE
+        case('h2')
+          i_gas_type = GAS_H2
+        case('n2')
+          i_gas_type = GAS_N2
+        case('o2')
+          i_gas_type = GAS_O2
+        case('helium')
+          i_gas_type = GAS_HE
+        case('hydrogen')
+          i_gas_type = GAS_H2
+        case('nitrogen')
+          i_gas_type = GAS_N2
+        case('oxygen')
+          i_gas_type = GAS_O2
+        end select
+      end if
+      !-------------------------!
+      ! Temporal discretization !
+      !-------------------------!
+      if(trim(buffer).eq.'time stepping scheme') then
+        read(7,'(a)') buffer
+        call remove_char(buffer,'-')
+        call remove_char(buffer,'_')
+        call to_lower(buffer)
+        select case(trim(buffer))
+        case('explicit euler')
+          i_explicit = EXPLICIT_EULER
+        case('predictor corrector')
+          i_explicit = PREDICTOR_CORRECTOR
+        case('runge kutta')
+          i_explicit = RUNGE_KUTTA
+        case('multistage optimal smoothing')
+          i_explicit = MULTISTAGE_OPTIMAL_SMOOTHING
+        end select
+      else if(trim(buffer).eq.'number of stages') then
+        read(7,*) n_stage
+      else if(trim(buffer).eq.'cfl number') then
+        read(7,*) cfl_number
+      else if(trim(buffer).eq.'time stepping') then
+        read(7,'(a)') buffer
+        call remove_char(buffer,'-')
+        call remove_char(buffer,'_')
+        call to_lower(buffer)
+        select case(trim(buffer))
+        case('global')
+          i_time_step = GLOBAL_TIME_STEP
+        case('local')
+          i_time_step = LOCAL_TIME_STEP
+        case('global steady state')
+          i_time_step = GLOBAL_STEADY_STATE
+        end select
+      else if(trim(buffer).eq.'maximum time') then
+        read(7,*) time_max
+      else if((trim(buffer).eq.'max time steps').or. &
+              (trim(buffer).eq.'maximum time steps')) then
+        read(7,*) max_time_steps
+      end if
+      !-------------------------!
+      ! Spatial discretization  !
+      !-------------------------!
+      if(trim(buffer).eq.'flux scheme') then
+        read(7,'(a)') buffer
+        call remove_char(buffer,'-')
+        call remove_char(buffer,'_')
+        call to_lower(buffer)
+        select case(trim(buffer))
+        case('godunov')
+          i_flux = FLUX_GODUNOV
+        case('isentropic')
+          i_flux = FLUX_ISENTROPIC
+        case('rusanov')
+          i_flux = FLUX_RUSANOV
+        case('hlle')
+          i_flux = FLUX_HLLE
+        case('hlll')
+          i_flux = FLUX_HLLL
+        case('hllc')
+          i_flux = FLUX_HLLC
+        case('osher')
+          i_flux = FLUX_OSHER
+        case('roe')
+          i_flux = FLUX_ROE
+        case('van leer')
+          i_flux = FLUX_VANLEER
+        case('ausm plus')
+          i_flux = FLUX_AUSMplus
+        case('ausm plus up')
+          i_flux = FLUX_AUSMplusup
+        case('slau')
+          i_flux = FLUX_SLAU
+        end select
+      else if(trim(buffer).eq.'gradient reconstruction') then
+        read(7,'(a)') buffer
+        call remove_char(buffer,'-')
+        call remove_char(buffer,'_')
+        call to_lower(buffer)
+        select case(trim(buffer))
+        case('green gauss')
+          i_recon = RECONSTRUCTION_GG
+        case('least squares')
+          i_recon = RECONSTRUCTION_LSQ
+        case('weno')
+          i_recon = RECONSTRUCTION_WENO
+        case('ppm')
+          i_recon = RECONSTRUCTION_PPM
+        case('gamma')
+          i_recon = RECONSTRUCTION_GAMMA
+        end select
+      else if(trim(buffer).eq.'limiter') then
+        read(7,'(a)') buffer
+        call remove_char(buffer,'-')
+        call remove_char(buffer,'_')
+        call to_lower(buffer)
+        select case(trim(buffer))
+        case('zero')
+          i_limiter = LIMITER_ZERO
+        case('one')
+          i_limiter = LIMITER_ONE
+        case('minmod')
+          i_limiter = LIMITER_MINMOD
+        case('umist')
+          i_limiter = LIMITER_UMIST
+        case('double minmod')
+          i_limiter = LIMITER_DOUBLE_MINMOD
+        case('superbee')
+          i_limiter = LIMITER_SUPERBEE
+        case('phi')
+          i_limiter = LIMITER_PHI
+        case('van leer')
+          i_limiter = LIMITER_VANLEER
+        case('van albada')
+          i_limiter = LIMITER_VANALBADA
+        case('sine')
+          i_limiter = LIMITER_SINE
+        case('barth jespersen')
+          i_limiter = LIMITER_BARTH_JESPERSEN
+        case('venkatakrisnan')
+          i_limiter = LIMITER_VENKATAKRISHNAN
+        end select
+      end if
+      !--------------!
+      ! Input/Output !
+      !--------------!
+      if(trim(buffer).eq.'output frequency') then
+        read(7,*) i_output_freq
+      else if(trim(buffer).eq.'file name') then
+        read(7,'(a)') plot_file
+      else if(trim(buffer).eq.'plot format') then
+        read(7,'(a)') buffer
+        call remove_char(buffer,'-')
+        call remove_char(buffer,'_')
+        call to_lower(buffer)
+        select case(trim(buffer))
+        case('python')
+          plot_python = .true.
+        case('gnuplot')
+          plot_gnuplot = .true.
+        case('tecplot')
+          plot_tecplot = .true.
+        case('eps')
+          plot_eps = .true.
+        end select
+      end if
+
+    end if
+    return
+  end subroutine inputParse
 
 end module inputParams

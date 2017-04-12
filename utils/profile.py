@@ -2,17 +2,19 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
-if len(sys.argv) == 1:
-    varnum = 1
-else:
+if len(sys.argv) == 3:
     varnum = int(sys.argv[1])
+    filenm = sys.argv[2]
+else:
+    print 'Arguments not correct'
+    sys.exit()
 
 line = []
 varname = []
 varsymb = []
 varunit = []
 
-with open('output.dat') as fh:
+with open(filenm) as fh:
     nvar = int(fh.readline())
     for i in range(nvar):
         buffer = fh.readline()

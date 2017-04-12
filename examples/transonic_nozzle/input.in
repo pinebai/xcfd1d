@@ -1,40 +1,44 @@
-#----------------------------------------+
-# TRANSONIC NOZZLE PROBLEM               |
-#----------------------------------------+
+# TRANSONIC NOZZLE
 
-# PROBLEM PARAMETERS:
-&problem
- i_problem = 8 
- num_cells = 100
- num_ghost = 2
- i_gas_type = 0
-/
+# PROBLEM PARAMETERS
+Problem =
+Transonic Nozzle
+Number of Cells =
+100
+Gas Type =
+Air
 
-# TEMPORAL DISCRETIZATION:
-&temporal
- i_explicit = 3
- n_stage = 5
- cfl_number = 0.25
- i_time_step = 1
- time_max = 0.0
- max_time_steps = 10000
- i_output_freq = 10
-/
+# TEMPORAL DISCRETIZATION
+Time Stepping Scheme =
+Multistage Optimal Smoothing
+Number of Stages = 
+3
+CFL Number =
+0.25
+Time Stepping =
+Global Steady-State
+Maximum Time-Steps =
+10000
 
-# SPATIAL DISCRETIZATION:
-&spatial
- i_flux = 4
- i_limiter = 10
- i_recon = 1
-/
+# SPATIAL DISCRETIZATION
+Flux Scheme =
+Roe
+Gradient Reconstruction =
+Least Squares
+Limiter =
+Barth Jespersen
 
-# OUTPUT FORMATS:
-&output
- plot_tecplot = false
- plot_gnuplot = false
- plot_eps     = false
- plot_python  = true
-/
+# OUTPUT
+Output Frequency =
+100
+File Name =
+output
 
-&eps_plots
-/
+# EXECUTE PROGRAM
+execute
+
+# PLOT DATA
+plot python
+
+# TERMINATE PROGRAM
+terminate

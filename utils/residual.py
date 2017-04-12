@@ -2,18 +2,20 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
-if len(sys.argv) == 1:
-    var = 'l1'
-else:
+if len(sys.argv) == 3:
     var = sys.argv[1]
+    fnm = sys.argv[2]
+else:
+    print 'Arguments not correct'
+    sys.exit()
 
 nvar = 11
-ndat = sum(1 for line in open('residual.dat'))
+ndat = sum(1 for line in open(fnm))
 ndat -= 1
 
 line = []
 
-with open('residual.dat') as fh:
+with open(fnm) as fh:
     buffer = fh.readline()
     data = np.zeros( (nvar,ndat) )
     for i in range(ndat):

@@ -6,6 +6,76 @@
 ! various explicit time-marching schemes.
 !-----------------------------------------------------------------------
 program xcfd1d
+  use inputParams
+  use explSolver
+  use solnBlock_module
+  use gridBlock_module
+  use exactSoln_module
+  implicit none
+  integer            :: ierr
+  integer            :: iotag
+  character(len=128) :: fname
+
+  write(6,"(a)") '----------------------------------------------------------------------'
+  write(6,"(a)") ' xCFD1D SOLVER FOR THE 1D EULER EQUATIONS'
+  write(6,"(a)") '----------------------------------------------------------------------'
+
+  call inputDefaults
+
+  fname = 'input.in'
+  call inputOpen(fname)
+
+  ierr = 0
+  iotag = NOTHING
+
+  do while(iotag.ne.TERMINATE)
+    call inputParse(iotag)
+    select case(iotag)
+    case(NOTHING)
+    case(EXECUTE)
+      call compute(1)
+    case(CONTINUE)
+      call compute(0)
+    case(PYTHON)
+      plot_python = .true.
+      plot_gnuplot = .false.
+      plot_tecplot = .false.
+      plot_eps = .false.
+      call plot_data
+    case(GNUPLOT)
+      plot_python = .false.
+      plot_gnuplot = .true.
+      plot_tecplot = .false.
+      plot_eps = .false.
+      call plot_data
+    case(TECPLOT)
+      plot_python = .false.
+      plot_gnuplot = .false.
+      plot_tecplot = .true.
+      plot_eps = .false.
+      call plot_data
+    end select
+  end do
+  
+  call inputClose
+
+  write(6,"(a)") '----------------------------------------------------------------------'
+  write(6,"(a)") ' xCFD1D SOLVER COMPLETED'
+  write(6,"(a)") '----------------------------------------------------------------------'
+
+  !Memory deallocation:  
+  write(6,"(a)") ' -> Memory deallocation'
+  call gridBlock_deallocate
+  call solnBlock_deallocate
+  call solnExplicit_deallocate
+  call exactSoln_deallocate
+
+  call exit(0)
+end program xcfd1d
+
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+subroutine compute(iopt)
   use realSizes, only: dp
   use inputParams
   use cfdParams
@@ -14,9 +84,9 @@ program xcfd1d
   use solnBlock_module
   use gridBlock_module
   use exactSoln_module
-
   implicit none
-
+  !Argument variable:
+  integer, intent(in) :: iopt
   !Local variables:
   integer               :: ierr      !Error flag
   integer               :: i_stage   !Explicit time-stepping stage number
@@ -26,20 +96,15 @@ program xcfd1d
   type(Euler1D_U_State) :: l1norm    !L1-residual norm
   type(Euler1D_U_State) :: l2norm    !L2-residual norm
   type(Euler1D_U_State) :: maxnorm   !Max-residual norm
+  character(len=128)    :: fname
 
   ierr = 0
   
-  write(6,"(a)") '----------------------------------------------------------------------'
-  write(6,"(a)") ' xCFD1D SOLVER FOR THE 1D EULER EQUATIONS'
-  write(6,"(a)") '----------------------------------------------------------------------'
-
-  write(6,"(a)") ' Reading input parameters:'
-
-  write(6,"(a)") ' -> Setting defaults'
-  call inputDefaults
-
-  write(6,"(a)") ' -> Reading namelists'
-  call inputNamelists
+  !Memory deallocation:  
+  call gridBlock_deallocate
+  call solnBlock_deallocate
+  call solnExplicit_deallocate
+  call exactSoln_deallocate
 
   write(6,"(a)") ' -> Checking consistency of the input parameters'
   call inputConsistency(ierr)
@@ -48,50 +113,47 @@ program xcfd1d
   write(6,"(a)") ' -> Input parameters:'
   call inputWrite
 
-  write(6,"(a)") '----------------------------------------------------------------------'
-  write(6,"(a)") ' Problem setup and initialization:'
-
-  write(6,"(a)") ' -> Memory allocation'
-  call gridBlock_allocate(ierr,i_problem,num_cells,num_ghost)
-  if(ierr.eq.0) call solnBlock_allocate(ierr,num_cells,num_ghost)
-  if(ierr.eq.0) call solnExplicit_allocate
-  if(ierr.ne.0) then
-   write(6,"(a)") ' ERROR during allocation, error number ', ierr
-   call exit(2)
+  if(iopt.eq.1) then
+    write(6,"(a)") ' -> Memory allocation'
+    call gridBlock_allocate(ierr,i_problem,num_cells,num_ghost)
+    if(ierr.eq.0) call solnBlock_allocate(ierr,num_cells,num_ghost)
+    if(ierr.eq.0) call solnExplicit_allocate
+    if(ierr.ne.0) then
+      write(6,"(a)") ' ERROR during allocation, error number ', ierr
+      call exit(2)
+    end if
+    write(6,"(a)") ' -> Grid generation'
+    call createBlock
+    write(6,"(a)") ' -> Setting initial conditions'
+    call applyICs
+    write(6,"(a)") ' -> Applying boundary conditions'
+    call applyBCs
   end if
 
-  write(6,"(a)") ' -> Grid generation'
-  call createBlock
+  call open_residual_file(iopt)
 
-  write(6,"(a)") ' -> Setting initial conditions'
-  call applyICs
-
-  write(6,"(a)") ' -> Applying boundary conditions'
-  call applyBCs
-
-  call open_residual_file
-
-  write(6,"(a)") '----------------------------------------------------------------------'
-  write(6,"(a)") ' Problem solution:'
-
-  time = 0.
-  n_steps = 0
+  if(iopt.eq.1) then
+    time = 0.
+    n_steps = 0
+  end if
 
   !Perform required number of iterations (time steps).
   time_marching: do
 
     !Consider exit criteria.
-    if(i_time_step.eq.GLOBAL_TIME_STEP.and.time.ge.time_max) exit
-    if(i_time_step.eq.LOCAL_TIME_STEP.and.n_steps.ge.max_time_steps) exit
+    if((i_time_step.eq.GLOBAL_TIME_STEP).and.(time.ge.time_max)) exit
+    if((i_time_step.eq.LOCAL_TIME_STEP).and.(n_steps.ge.max_time_steps)) exit
+    if((i_time_step.eq.GLOBAL_STEADY_STATE).and.(n_steps.ge.max_time_steps)) exit
 
     !Determine local and global time steps.
     call setTimeStep(dtime, cfl_number)
-    if(i_time_step.eq.GLOBAL_TIME_STEP) then
+    if(i_time_step.eq.GLOBAL_TIME_STEP)then
       if(time + dtime.gt.time_max) then
         dtime = time_max-time
       end if
       call setGlobalTimeStep(dtime)
     end if
+    if(i_time_step.eq.GLOBAL_STEADY_STATE) call setGlobalTimeStep(dtime)
 
     !Update solution for next time step using a multistage time-stepping scheme.
     do i_stage = 1, n_stage
@@ -138,47 +200,8 @@ program xcfd1d
   !Apply boundary conditions:
   call applyBCs
 
-  write(6,"(a)") '----------------------------------------------------------------------'
-  write(6,"(a)") ' Performing post-processing and memory deallocation:'
-
   !Close residual file:
   call close_residual_file
 
-  !Output cell-centered data in Tecplot format:
-  if(plot_tecplot) then
-    write(6,"(a)") ' -> Output cell-centered data for plotting with Tecplot'
-    call tecplot_output
-    call tecplot_residual
-  end if
-
-  !Output cell-centered data in gnuplot format:
-  if(plot_gnuplot) then
-    write(6,"(a)") ' -> Output cell-centered data for plotting with gnuplot'
-    call gnuplot_output
-  end if
-
-  !Output plots of cell-centered data directly as eps figures:
-  if(plot_eps) then
-    write(6,"(a)") ' -> Creating EPS figures with cell-centered data'
-    call eps_output
-  end if
-
-  !Output cell-centered data in format for python plotting:
-  if(plot_python) then
-    write(6,"(a)") ' -> Output cell-centered data for plotting with python/matplotlib'
-    call python_output
-  end if
-
-  !Memory deallocation:  
-  write(6,"(a)") ' -> Memory deallocation'
-  call gridBlock_deallocate
-  call solnBlock_deallocate
-  call solnExplicit_deallocate
-  call exactSoln_deallocate
-
-  write(6,"(a)") '----------------------------------------------------------------------'
-  write(6,"(a)") ' xCFD1D SOLVER COMPLETED'
-  write(6,"(a)") '----------------------------------------------------------------------'
-
-  call exit(0)
-end program xcfd1d
+  return
+end subroutine compute

@@ -1,62 +1,52 @@
-#----------------------------------------+
-# SINE-SQUARED WAVE PROBLEM              |
-#----------------------------------------+
+# SINE-SQUARED WAVE PROBLEM
 
-# PROBLEM PARAMETERS:
-&problem
- i_problem = 10
- wm = 0.25
- um = 10.0
- rhom = 1.0
- pm = 100000.0
- num_cells = 100
- num_ghost = 2
- i_gas_type = 0
-/
+# PROBLEM PARAMETERS
+Problem =
+Sine Squared Wave
+Wave Width =
+0.25
+Wave Speed =
+10.0
+Density =
+1.0
+Pressure =
+100000.0
+Number of Cells =
+100
+Gas Type =
+Air
 
-# TEMPORAL DISCRETIZATION:
-&temporal
- i_explicit = 2
- n_stage = 4
- cfl_number = 0.75
- time_max = 0.10
- max_time_steps = 10000
- i_output_freq = 100
-/
+# TEMPORAL DISCRETIZATION
+Time Stepping Scheme =
+Runge Kutta
+Number of Stages = 
+2
+CFL Number =
+0.5
+Maximum Time =
+0.1
+Time Stepping =
+Global
 
-# SPATIAL DISCRETIZATION:
-&spatial
- i_flux = 4
- i_limiter = 10
- i_recon = 1
-/
+# SPATIAL DISCRETIZATION
+Flux Scheme =
+Roe
+Gradient Reconstruction =
+Least Squares
+Limiter =
+Barth Jespersen
 
-# OUTPUT FORMATS:
-&output
- plot_tecplot = false
- plot_gnuplot = false
- plot_eps     = false
- plot_python  = true
-/
+# OUTPUT
+Output Frequency =
+10
+File Name =
+output
 
-&eps_plots
- nplots = 6
- Xf = 640, 640, 640, 640, 640, 640
- Yf = 400, 400, 400, 400, 400, 400
- Xo =  56,  56,  56,  56,  56,  56
- Yo =  35,  35,  35,  35,  35,  35
- Xa =  38,  38,  38,  38,  38,  38
- Ya =  14,  14,  14,  14,  14,  14
- xvar = 1, 1, 1, 1, 1, 1
- yvar = 1, 2, 3, 4, 5, 6
- xdim = 1.00,  1.00,    1.00, 1.00,    1.00, 1.00
- ydim = 1.00,  1.00, 1000.00, 1.00, 1000.00, 1.00
- xmin = 0.00,  0.00,    0.00, 0.00,    0.00, 0.00
- ymin = 0.00,  0.00,    0.00, 0.00,    0.00, 0.00
- xmax = 1.00,  1.00,    1.00, 1.00,    1.00, 1.00
- ymax = 6.25, 21.00,    1.05, 4.00,    2.60, 2.00
- dx   = 0.20,  0.20,    0.20, 0.20,    0.20, 0.20
- dy   = 1.00,  5.00,    0.20, 0.50,    0.50, 0.50
- xsig = 1, 1, 1, 1, 1, 1
- ysig = 1, 1, 1, 1, 1, 1
-/
+# EXECUTE PROGRAM
+execute
+
+# PLOT DATA
+plot python
+
+# TERMINATE PROGRAM
+terminate
