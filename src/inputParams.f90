@@ -33,8 +33,9 @@ module inputParams
   integer                 :: i_time_step         !Global or local time-stepping
   real(dp)                :: time_max            !Maximum solution time
   integer                 :: max_time_steps      !Maximum number of time steps
+  real(dp)                :: dt_fixed            !Fixed time-step
   namelist / temporal / i_explicit, n_stage, cfl_number, time_max, &
-       i_time_step, max_time_steps
+       i_time_step, max_time_steps, dt_fixed
 
   !Spatial discretization parameters:
   integer                 :: i_flux              !Flux function type
@@ -87,6 +88,7 @@ contains
     i_time_step = GLOBAL_TIME_STEP
     time_max = 0.0_dp
     max_time_steps = 0
+    dt_fixed = 0.0_dp
     i_output_freq = 10
     !Spatial discretization parameters:
     i_flux = FLUX_ROE
@@ -272,6 +274,8 @@ contains
       write(6,"(a)") "    - Local time-stepping"
     else if(i_time_step.eq.GLOBAL_STEADY_STATE) then
       write(6,"(a)") "    - Global steady-state"
+    else if(i_time_step.eq.FIXED_TIME_STEP) then
+      write(6,"(a)") "    - Fixed time-stepping"
     end if
     if(i_flux.eq.FLUX_GODUNOV) then
       write(6,"(a)") "    - Fluxes calculated using the exact Riemann solution"
@@ -492,12 +496,16 @@ contains
           i_time_step = LOCAL_TIME_STEP
         case('global steady state')
           i_time_step = GLOBAL_STEADY_STATE
+        case('fixed')
+          i_time_step = FIXED_TIME_STEP
         end select
       else if(trim(buffer).eq.'maximum time') then
         read(7,*) time_max
       else if((trim(buffer).eq.'max time steps').or. &
               (trim(buffer).eq.'maximum time steps')) then
         read(7,*) max_time_steps
+      else if(trim(buffer).eq.'fixed time step') then
+        read(7,*) dt_fixed
       end if
       !-------------------------!
       ! Spatial discretization  !

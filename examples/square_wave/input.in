@@ -26,7 +26,9 @@ CFL Number =
 Maximum Time =
 0.1
 Time Stepping =
-Global
+Fixed
+Fixed Time-Step =
+0.00001
 
 # SPATIAL DISCRETIZATION
 Flux Scheme =

@@ -144,16 +144,24 @@ subroutine compute(iopt)
     if((i_time_step.eq.GLOBAL_TIME_STEP).and.(time.ge.time_max)) exit
     if((i_time_step.eq.LOCAL_TIME_STEP).and.(n_steps.ge.max_time_steps)) exit
     if((i_time_step.eq.GLOBAL_STEADY_STATE).and.(n_steps.ge.max_time_steps)) exit
+    if((i_time_step.eq.FIXED_TIME_STEP).and.(time.ge.time_max)) exit
 
     !Determine local and global time steps.
     call setTimeStep(dtime, cfl_number)
-    if(i_time_step.eq.GLOBAL_TIME_STEP)then
+    if(i_time_step.eq.GLOBAL_TIME_STEP) then
       if(time + dtime.gt.time_max) then
         dtime = time_max-time
       end if
       call setGlobalTimeStep(dtime)
+    else if(i_time_step.eq.FIXED_TIME_STEP) then
+      dtime = dt_fixed
+      if(time + dtime.gt.time_max) then
+        dtime = time_max-time
+      end if
+      call setGlobalTimeStep(dtime)
+    else if(i_time_step.eq.GLOBAL_STEADY_STATE) then
+      call setGlobalTimeStep(dtime)
     end if
-    if(i_time_step.eq.GLOBAL_STEADY_STATE) call setGlobalTimeStep(dtime)
 
     !Update solution for next time step using a multistage time-stepping scheme.
     do i_stage = 1, n_stage
