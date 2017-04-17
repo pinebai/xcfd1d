@@ -1,0 +1,49 @@
+# HALF BLAST
+#
+# (x,t) = (0.50,0.008), (0 <= x <= 1.0)
+#
+# Wl = Euler1D_pState(1.0,0.0,1000.00)
+# Wr = Euler1D_pState(1.0,0.0,   0.01)
+
+# PROBLEM PARAMETERS
+Problem =
+Half Blast
+Number of Cells =
+100
+Gas Type =
+Air
+
+# TEMPORAL DISCRETIZATION
+Time Stepping Scheme =
+Runge Kutta
+Number of Stages = 
+2
+CFL Number =
+0.25
+Maximum Time =
+0.012
+Time Stepping =
+Global
+
+# SPATIAL DISCRETIZATION
+Flux Scheme =
+Roe
+Gradient Reconstruction =
+Least Squares
+Limiter =
+Barth Jespersen
+
+# OUTPUT
+Output Frequency =
+10
+File Name =
+output
+
+# EXECUTE PROGRAM
+execute
+
+# PLOT DATA
+plot python
+
+# TERMINATE PROGRAM
+terminate
