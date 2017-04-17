@@ -255,11 +255,11 @@ contains
   end subroutine exact123Problem
 
   !-------------------------------------------------------------------
-  ! Strong Sod: (x,t) = (0.5,0.012), x in [0,1]
+  ! Half Blast: (x,t) = (0.5,0.012), x in [0,1]
   !             (rho,u,p)_l = (1.0,0.0,0.01)
   !             (rho,u,p)_r = (1.0,0.0,1000.0)
   !-------------------------------------------------------------------
-  subroutine exactStrongSod(t)
+  subroutine exactHalfBlast(t)
     use realsizes, only: dp
     use mathFunctions, only: sqr
     use numbers, only: TOLER
@@ -288,7 +288,7 @@ contains
     Wl = WState(1.0_dp,0.0_dp,1000.0_dp)
     al = a_W(Wl)
     !Initialize the right state
-    Wr = WState(0.125_dp,0.0_dp,0.01_dp)
+    Wr = WState(1.0_dp,0.0_dp,0.01_dp)
     ar = a_W(Wr)
     !If initial conditions
     if(t.lt.TOLER) then
@@ -331,7 +331,7 @@ contains
     Xe(27)%xc = 1.0_dp
     We(27) = Wr
     return
-  end subroutine exactStrongSod
+  end subroutine exactHalfBlast
 
   !---------------------------------------------------------------------
   ! Stationary Contact: (x,t)       = (0.80,0.012), x in [0,1]

@@ -242,10 +242,10 @@ contains
       write(6,"(a)") "    - Sod problem"
     else if(i_problem.eq.MODIFIED_SOD) then
       write(6,"(a)") "    - Modified Sod problem"
-    else if(i_problem.eq.STRONG_SOD) then
-      write(6,"(a)") "    - Strong Sod"
     else if(i_problem.eq.PROBLEM_123) then
       write(6,"(a)") "    - 123 problem"
+    else if(i_problem.eq.HALF_BLAST) then
+      write(6,"(a)") "    - Half Blast"
     else if(i_problem.eq.THREE_RIGHT_WAVES) then
       write(6,"(a)") "    - Three right travelling waves"
     else if(i_problem.eq.STATIONARY_CONTACT) then
@@ -411,10 +411,10 @@ contains
           i_problem = SOD_PROBLEM
         case('modified sod')
           i_problem = MODIFIED_SOD
-        case('strong sod')
-          i_problem = STRONG_SOD
         case('123 problem')
           i_problem = PROBLEM_123
+        case('half blast')
+          i_problem = HALF_BLAST
         case('three right waves')
           i_problem = THREE_RIGHT_WAVES
         case('stationary contact')

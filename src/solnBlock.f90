@@ -94,7 +94,7 @@ contains
     integer               :: n
     type(Euler1D_W_State) :: Wl, Wr
     select case(i_problem)
-    case(SOD_PROBLEM)
+    case(SOD_PROBLEM) !Test 1 from Toro
       Wl = WState(1.0_dp,0.0_dp,1.0_dp)
       Wr = WState(0.125_dp,0.0_dp,0.1_dp)
       do n = NCl-Ng, NCu+Ng
@@ -116,18 +116,7 @@ contains
         end if
       end do
       call exactModifiedSod(time_max)
-    case(STRONG_SOD)
-      Wl = WState(1.0_dp,0.0_dp,1000.0_dp)
-      Wr = WState(0.125_dp,0.0_dp,0.01_dp)
-      do n = NCl-Ng, NCu+Ng
-        if(Cell(n)%Xc.le.0.5_dp) then
-          W(n) = Wl
-        else
-          W(n) = Wr
-        end if
-      end do
-      call exactStrongSod(time_max)
-    case(PROBLEM_123)
+    case(PROBLEM_123) !Test 2 from Toro
       Wl = WState(1.0_dp,-2.0_dp,0.4_dp)
       Wr = WState(1.0_dp, 2.0_dp,0.4_dp)
       do n = NCl-Ng, NCu+Ng
@@ -138,6 +127,17 @@ contains
         end if
       end do
       call exact123Problem(time_max)
+    case(HALF_BLAST) !Test 3 from Toro
+      Wl = WState(1.0_dp,0.0_dp,1000.0_dp)
+      Wr = WState(1.0_dp,0.0_dp,0.01_dp)
+      do n = NCl-Ng, NCu+Ng
+        if(Cell(n)%Xc.le.0.5_dp) then
+          W(n) = Wl
+        else
+          W(n) = Wr
+        end if
+      end do
+      call exactHalfBlast(time_max)
     case(THREE_RIGHT_WAVES)
       Wl = WState(5.99924_dp,19.5975_dp,460.894_dp)
       Wr = WState(5.99242_dp,-6.19633_dp,46.095_dp)

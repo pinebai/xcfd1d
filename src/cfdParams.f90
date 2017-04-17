@@ -10,7 +10,7 @@ module cfdParams
   !Define initial conditions:
   integer, parameter :: SOD_PROBLEM = 1
   integer, parameter :: MODIFIED_SOD = 2
-  integer, parameter :: STRONG_SOD = 3
+  integer, parameter :: HALF_BLAST = 3
   integer, parameter :: PROBLEM_123 = 4
   integer, parameter :: THREE_RIGHT_WAVES = 5
   integer, parameter :: STATIONARY_CONTACT = 6
